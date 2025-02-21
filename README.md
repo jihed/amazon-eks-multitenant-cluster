@@ -17,6 +17,7 @@ amazon-eks-multitenant-cluster/
 - kubectl CLI tool installed and configured
 - KCL CLI tool installed
 - Cluster admin access
+- ArgoCD installed on the cluster
 
 ### Installation
 1. Clone the repository:
@@ -25,9 +26,14 @@ git clone <repository-url>
 cd amazon-eks-multitenant-cluster
 ```
 
-2. Apply the tenant configuration:
+2. Configure ArgoCD to track this repository:
 ```bash
-kubectl apply -f manifest.yaml
+argocd app create multitenant-manager \
+  --repo <repository-url> \
+  --path . \
+  --dest-server https://kubernetes.default.svc \
+  --dest-namespace argocd \
+  --sync-policy automated
 ```
 
 ### Quick Start
@@ -49,15 +55,22 @@ tenants:
         - monitoring
 ```
 
-2. Generate the Kubernetes manifests:
+2. Commit and push your changes:
 ```bash
-kcl manifest.yaml
+git add tenant-config.yaml
+git commit -m "Add new tenant configuration"
+git push origin main
 ```
 
-3. Apply the configuration:
-```bash
-kubectl apply -f manifest.yaml
-```
+ArgoCD will automatically detect the changes, process the configuration using the KCL plugin, and apply the updated manifests to your cluster.
+
+### GitOps Workflow
+This repository implements a GitOps approach using ArgoCD:
+1. Configuration changes are made through git commits
+2. ArgoCD monitors the repository for changes
+3. When changes are detected, ArgoCD uses the KCL plugin to process the configuration
+4. Generated manifests are automatically applied to the cluster
+5. ArgoCD ensures the cluster state matches the repository state
 
 ### More Detailed Examples
 #### Creating a Production Tenant
@@ -96,24 +109,26 @@ kubectl describe networkpolicy -n <tenant-namespace>
 - Solution: Verify allowedNamespaces configuration in tenant-config.yaml
 
 ## Data Flow
-The multi-tenant configuration process transforms tenant definitions into Kubernetes resources through KCL processing and kubectl application.
+The multi-tenant configuration process uses GitOps principles to manage cluster state:
 
 ```ascii
-[tenant-config.yaml] --> [KCL Processing] --> [Kubernetes Manifests] --> [EKS Cluster]
-     |                                              |                         |
-     |                                              |                         |
-     v                                              v                         v
-Tenant Definitions               Resource Quotas, Network Policies     Applied Resources
+[Git Repository] --> [ArgoCD] --> [KCL Processing] --> [Kubernetes Manifests] --> [EKS Cluster]
+       |                              |                          |                      |
+       |                              |                          |                      |
+       v                              v                          v                      v
+Tenant Definitions     Configuration Detection    Resource Quotas, Network     Applied Resources
+                                                      Policies
 ```
 
 Component interactions:
-1. KCL processes the tenant configuration file to generate Kubernetes manifests
-2. Manifests define namespace, resource quotas, and network policies per tenant
-3. kubectl applies the manifests to the EKS cluster
-4. EKS enforces resource quotas and network policies
-5. Tenant workloads are isolated based on defined policies
-6. Network policies control inter-namespace communication
-7. Resource quotas prevent resource overutilization
+1. Changes are committed to the Git repository
+2. ArgoCD detects configuration changes
+3. KCL plugin processes the tenant configuration
+4. ArgoCD applies generated manifests to the cluster
+5. EKS enforces resource quotas and network policies
+6. Tenant workloads are isolated based on defined policies
+7. Network policies control inter-namespace communication
+8. Resource quotas prevent resource overutilization
 
 ## Infrastructure
 
@@ -135,14 +150,18 @@ Component interactions:
 ### Prerequisites
 - EKS cluster with network policy support enabled
 - Cluster admin permissions
+- ArgoCD installed and configured
+- KCL plugin configured in ArgoCD
 
 ### Deployment Steps
-1. Configure tenant specifications in tenant-config.yaml
-2. Generate manifests using KCL
-3. Apply manifests to the cluster
-4. Verify tenant isolation and resource quotas
+1. Configure ArgoCD to monitor this repository
+2. Add or modify tenant specifications in tenant-config.yaml
+3. Commit and push changes to the repository
+4. ArgoCD automatically syncs and applies changes
+5. Verify tenant isolation and resource quotas
 
 ### Monitoring
 - Monitor resource utilization per tenant
 - Track network policy effectiveness
 - Review quota compliance
+- Monitor ArgoCD sync status and events
