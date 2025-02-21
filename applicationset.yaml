@@ -19,7 +19,7 @@ spec:
       source:
         repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster
         targetRevision: HEAD
-        path: '{{path.dir}}'
+        path: /
         plugin:
           name: kcl-v1.0
       destination:
