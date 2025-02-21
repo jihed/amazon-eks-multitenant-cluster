@@ -2,7 +2,7 @@ tenants:
   - name: tenant1
     labels:
       team: alpha
-      environment: dev
+      environment: staging
     resourceQuota:
       cpu: "4"
       memory: "8Gi"
@@ -15,7 +15,7 @@ tenants:
   - name: tenant2
     labels:
       team: beta
-      environment: prod
+      environment: staging
     resourceQuota:
       cpu: "8"
       memory: "16Gi"

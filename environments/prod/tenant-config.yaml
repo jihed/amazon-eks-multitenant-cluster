@@ -2,7 +2,7 @@ tenants:
   - name: tenant1
     labels:
       team: alpha
-      environment: dev
+      environment: prod
     resourceQuota:
       cpu: "4"
       memory: "8Gi"

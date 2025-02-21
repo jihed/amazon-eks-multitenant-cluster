@@ -27,7 +27,7 @@ namespaces = [
     {
         apiVersion = "v1"
         kind = "Namespace"
-        metadata.name = tenant.name
+        metadata.name = "${tenant.name}-${tenant.environment}"
         metadata.labels = tenant.labels
     } for tenant in tenants
 ]
@@ -37,7 +37,7 @@ resourceQuotas = [
     {
         apiVersion = "v1"
         kind = "ResourceQuota"
-        metadata.name = "${tenant.name}-quota"
+        metadata.name = "${tenant.name}-${tenant.environment}-quota"
         metadata.namespace = tenant.name
         spec.hard = {
             cpu = tenant.resourceQuota.cpu
@@ -52,7 +52,7 @@ networkPolicies = [
     {
         apiVersion = "networking.k8s.io/v1"
         kind = "NetworkPolicy"
-        metadata.name = "${tenant.name}-network-policy"
+        metadata.name = "${tenant.name}-${tenant.environment}-network-policy"
         metadata.namespace = tenant.name
         spec = {
             podSelector = {}
