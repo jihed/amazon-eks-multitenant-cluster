@@ -1,7 +1,0 @@
-digraph INFRA {
-  node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
-  "EKS-Tenant1" [ label = "EKS-Tenant1
-(EKSNamespace)", shape =rectangle ];
-  "EKS-Tenant2" [ label = "EKS-Tenant2
-(EKSNamespace)", shape =rectangle ];
-}
