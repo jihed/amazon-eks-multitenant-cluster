@@ -1,0 +1,16 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: multitenant
+  namespace: argocd
+spec:
+  destination:
+    namespace: default
+    server: https://kubernetes.default.svc
+  project: default
+  source:
+    path: .
+    plugin:
+      name: kcl-v1.0
+    repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster
+    targetRevision: refactor
