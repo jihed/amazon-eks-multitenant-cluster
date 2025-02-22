@@ -1,5 +1,4 @@
 # base/schema.k
-# Export the schema
 schema Tenant:
     name: str
     env: str

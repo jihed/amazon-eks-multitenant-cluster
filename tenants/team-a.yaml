@@ -1,4 +1,4 @@
-# config/tenants/team-a.yaml
+# tenants/team-a.yaml
 name: team-a
 env: production
 namespaces: 

@@ -1,6 +1,6 @@
 # resources/namespace.k
 import k8s.api.core.v1 as corev1
-import config.config as c
+import base.config
 
 namespaces = [corev1.Namespace {
     metadata = {
@@ -11,4 +11,4 @@ namespaces = [corev1.Namespace {
             "kubernetes.io/metadata.name" = ns
         }
     }
-} for tenant in c.tenants for ns in tenant.namespaces]
+} for tenant in config.tenants for ns in tenant.namespaces]

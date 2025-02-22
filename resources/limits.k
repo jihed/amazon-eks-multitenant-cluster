@@ -1,6 +1,6 @@
 # resources/limits.k
 import k8s.api.core.v1 as corev1
-import config.config as c
+import base.config
 
 limits = [corev1.LimitRange {
     metadata = {
@@ -15,4 +15,4 @@ limits = [corev1.LimitRange {
             max = tenant.limitRange.max
         }]
     }
-} for tenant in c.tenants for ns in tenant.namespaces]
+} for tenant in config.tenants for ns in tenant.namespaces]

@@ -1,6 +1,6 @@
 # resources/network.k
 import k8s.api.networking.v1 as networkingv1
-import config.config as c
+import base.config
 
 policies = [networkingv1.NetworkPolicy {
     metadata = {
@@ -71,4 +71,4 @@ policies = [networkingv1.NetworkPolicy {
             }
         ]
     }
-} for tenant in c.tenants for ns in tenant.namespaces]
+} for tenant in config.tenants for ns in tenant.namespaces]
