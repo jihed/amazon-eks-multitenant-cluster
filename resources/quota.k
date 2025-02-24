@@ -1,7 +1,6 @@
 # resources/quota.k
 import k8s.api.core.v1 as corev1
-
-tenants = option("tenants") or []
+import base.config
 
 quotas = [corev1.ResourceQuota {
     metadata = {
@@ -9,6 +8,6 @@ quotas = [corev1.ResourceQuota {
         namespace = ns
     }
     spec = {
-        hard = t["resourceQuota"]
+        hard = tenant.resourceQuota
     }
-} for t in tenants for ns in t["namespaces"]]
+} for tenant in config.tenants for ns in tenant.namespaces]
