@@ -6,7 +6,7 @@ import base.schema as s
 
 # yaml_files = file.glob("../tenants-onboarding/team-*.yaml")
 
-yamls = [ yaml.decode(file.read(yaml_path)) for yaml_path in yaml_files]
+# yamls = [ yaml.decode(file.read(yaml_path)) for yaml_path in yaml_files]
 
 
 # Export tenants variable
