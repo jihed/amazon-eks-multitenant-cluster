@@ -6,6 +6,9 @@ policies = [networkingv1.NetworkPolicy {
     metadata = {
         name = "${ns}-netpol"
         namespace = ns
+        labels = {
+            "managed-by" = "kcl"
+        }
     }
     spec = {
         podSelector = {}
@@ -16,37 +19,7 @@ policies = [networkingv1.NetworkPolicy {
                     {
                         namespaceSelector = {
                             matchLabels = {
-                                team = tenant.name
-                            }
-                        }
-                    }
-                    {
-                        namespaceSelector = {
-                            matchLabels = {
-                                "kubernetes.io/metadata.name" = "kube-system"
-                            }
-                        }
-                    }
-                ]
-                ports = [
-                    {
-                        port = 53
-                        protocol = "UDP"
-                    }
-                    {
-                        port = 53
-                        protocol = "TCP"
-                    }
-                ]
-            }
-        ]
-        egress = [
-            {
-                to = [
-                    {
-                        namespaceSelector = {
-                            matchLabels = {
-                                team = tenant.name
+                                "team" = tenant.name
                             }
                         }
                     }

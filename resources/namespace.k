@@ -6,9 +6,13 @@ namespaces = [corev1.Namespace {
     metadata = {
         name = ns
         labels = {
-            team = tenant.name
-            environment = tenant.env
-            "kubernetes.io/metadata.name" = ns
+            "team" = tenant.name
+            "environment" = tenant.env
+            "managed-by" = "kcl"
+        }
+        annotations = {
+            "team.kubernetes.io/name" = tenant.name
+            "team.kubernetes.io/environment" = tenant.env
         }
     }
 } for tenant in config.tenants for ns in tenant.namespaces]
