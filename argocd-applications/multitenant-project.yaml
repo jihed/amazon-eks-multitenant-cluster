@@ -1,0 +1,19 @@
+# project.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: tenants
+  namespace: argocd
+spec:
+  description: "Multi-tenant Namespace Management"
+  sourceRepos:
+    - "https://github.com/jihed/amazon-eks-multitenant-cluster"
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+  namespaceResourceWhitelist:
+    - group: '*'
+      kind: '*'
