@@ -1,0 +1,39 @@
+# clusters/production/tenants/applicationset.yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: prod-tenant-namespaces
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
+        revision: feature/use_var #HEAD
+        files:
+        - path: "clusters/production/tenants/config/tenants/*.yaml"
+  template:
+    metadata:
+      name: 'prod-{{name}}-tenant'
+      labels:
+        tenant: '{{name}}'
+        environment: production
+    spec:
+      project: tenants-prod
+      source:
+        repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
+        targetRevision: feature/use_var #HEAD
+        path: clusters/production/tenants/config
+        plugin:
+          name: kcl
+          env:
+            - name: TENANT_FILE
+              value: "tenants/{{values.path}}"
+            - name: ENVIRONMENT
+              value: "production"
+      destination:
+        server: https://kubernetes.default.svc
+        namespace: '{{name}}'
+      syncPolicy:
+        automated:
+          prune: true
+          selfHeal: true

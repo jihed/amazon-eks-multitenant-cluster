@@ -4,16 +4,10 @@ import base.config
 
 policies = [networkingv1.NetworkPolicy {
     metadata = {
-        name = "${tenant.name}-${ns}-netpol"
-        namespace = "${tenant.name}-${ns}"
+        name = "${ns}-netpol"
+        namespace = ns
         labels = {
-            "team" = tenant.name
-            "environment" = tenant.env
             "managed-by" = "kcl"
-        }
-        annotations = {
-            "team.kubernetes.io/name" = tenant.name
-            "team.kubernetes.io/environment" = tenant.env
         }
     }
     spec = {
@@ -25,7 +19,37 @@ policies = [networkingv1.NetworkPolicy {
                     {
                         namespaceSelector = {
                             matchLabels = {
-                                "team" = tenant.name
+                                "team" = config.tenant.name
+                            }
+                        }
+                    }
+                    {
+                        namespaceSelector = {
+                            matchLabels = {
+                                "kubernetes.io/metadata.name" = "kube-system"
+                            }
+                        }
+                    }
+                ]
+                ports = [
+                    {
+                        port = 53
+                        protocol = "UDP"
+                    }
+                    {
+                        port = 53
+                        protocol = "TCP"
+                    }
+                ]
+            }
+        ]
+        egress = [
+            {
+                to = [
+                    {
+                        namespaceSelector = {
+                            matchLabels = {
+                                "team" = config.tenant.name
                             }
                         }
                     }
@@ -50,4 +74,4 @@ policies = [networkingv1.NetworkPolicy {
             }
         ]
     }
-} for tenant in config.tenants for ns in tenant.namespaces]
+} for ns in config.tenant.namespaces]

@@ -1,0 +1,17 @@
+# bootstrap/kcl-plugin-config.yaml
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kcl-plugin-config
+  namespace: argocd
+data:
+  plugin.yaml: |
+    apiVersion: argoproj.io/v1alpha1
+    kind: ConfigManagementPlugin
+    metadata:
+      name: kcl
+    spec:
+      version: v1.0
+      generate:
+        command: ["kcl"]
+        args: ["run", "-D", "TENANT_FILE=${TENANT_FILE}", "-D", "ENVIRONMENT=${ENVIRONMENT}"]
