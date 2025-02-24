@@ -5,9 +5,15 @@ import base.config
 policies = [networkingv1.NetworkPolicy {
     metadata = {
         name = "${tenant.name}-${ns}-netpol"
-        namespace = ns
+        namespace = "${tenant.name}-${ns}"
         labels = {
+            "team" = tenant.name
+            "environment" = tenant.env
             "managed-by" = "kcl"
+        }
+        annotations = {
+            "team.kubernetes.io/name" = tenant.name
+            "team.kubernetes.io/environment" = tenant.env
         }
     }
     spec = {

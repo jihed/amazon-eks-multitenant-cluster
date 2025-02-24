@@ -4,7 +4,7 @@ import base.config
 
 namespaces = [corev1.Namespace {
     metadata = {
-        name = ns
+        name = "${tenant.name}-${ns}"
         labels = {
             "team" = tenant.name
             "environment" = tenant.env
