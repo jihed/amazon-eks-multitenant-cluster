@@ -2,7 +2,62 @@
 
 This repository provides KCL configurations for managing multi-tenant Kubernetes namespaces and associated resources using GitOps methodology with ArgoCD and KCL plugin.
 
+## System Overview
+
+```mermaid
+graph TD
+    subgraph "Git Repository"
+        A[Tenant Configs] -->|YAML| B[KCL Templates]
+        B -->|Processes| C[Resource Definitions]
+    end
+    
+    subgraph "ArgoCD"
+        D[ApplicationSet] -->|Monitors| A
+        E[KCL Plugin] -->|Renders| C
+    end
+    
+    subgraph "EKS Cluster"
+        F[Namespaces]
+        G[ResourceQuotas]
+        H[LimitRanges]
+        I[NetworkPolicies]
+    end
+    
+    C -->|Applies| F
+    C -->|Applies| G
+    C -->|Applies| H
+    C -->|Applies| I
+    
+    D -->|Syncs| E
+```
+
 ## Architecture
+
+The configuration implements a multi-tenant architecture with the following components:
+
+### Configuration Layer
+- Git-based tenant configuration in YAML format
+- KCL templates for resource generation
+- ArgoCD ApplicationSet for automated deployment
+
+### Resource Management
+- **Namespace Isolation**: Dedicated namespaces per tenant with proper labels and annotations
+- **Resource Control**: 
+  - CPU and memory quotas
+  - Pod count limits
+  - Service restrictions
+  - ConfigMap and Secret limitations
+- **Security Boundaries**:
+  - Network isolation between tenants
+  - Controlled DNS access
+  - Default deny policies
+
+### Deployment Flow
+1. Tenant configurations are stored in Git
+2. ArgoCD ApplicationSet detects changes
+3. KCL plugin processes configurations
+4. Resources are generated and validated
+5. Changes are applied to the cluster
 
 The configuration generates these Kubernetes resources per tenant:
 - Namespaces with labels and annotations
