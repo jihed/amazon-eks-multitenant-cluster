@@ -134,6 +134,91 @@ kcl run
 kcl run | kubectl apply -f -
 ```
 
+## Application Onboarding
+
+Follow these steps to onboard a new application into the multi-tenant environment:
+
+1. **Tenant Resource Definition**
+   ```yaml
+   # Create a new tenant YAML file in tenants/ directory
+   name: <team-name>
+   env: <environment>
+   namespaces:
+     - <app-namespace-1>
+     - <app-namespace-2>
+   resourceQuota:
+     cpu: "<quota>"
+     memory: "<quota>"
+     pods: "<quota>"
+     services: "<quota>"
+     configmaps: "<quota>"
+     secrets: "<quota>"
+   limitRange:
+     default:
+       cpu: "<limit>"
+       memory: "<limit>"
+     defaultRequest:
+       cpu: "<request>"
+       memory: "<request>"
+     max:
+       cpu: "<max>"
+       memory: "<max>"
+   ```
+
+2. **ArgoCD Configuration**
+   ```yaml
+   # Create an Application resource for your tenant
+   apiVersion: argoproj.io/v1alpha1
+   kind: Application
+   metadata:
+     name: <team-name>-tenant
+     namespace: argocd
+   spec:
+     project: default
+     source:
+       repoURL: <your-git-repo>
+       targetRevision: HEAD
+       path: .
+       plugin:
+         name: kcl-v1.0
+     destination:
+       server: https://kubernetes.default.svc
+       namespace: default
+     syncPolicy:
+       automated:
+         prune: true
+         selfHeal: true
+   ```
+
+3. **Deployment Process**
+   1. Submit tenant configuration as a pull request
+   2. Upon merge, ArgoCD ApplicationSet detects the new configuration
+   3. KCL plugin processes the configuration and generates resources
+   4. ArgoCD applies the resources to the cluster
+   5. Verify namespace creation and resource constraints
+
+4. **Validation Steps**
+   ```bash
+   # Verify namespace creation
+   kubectl get ns | grep <team-name>
+
+   # Check resource quotas
+   kubectl get resourcequota -n <app-namespace>
+
+   # Verify limit ranges
+   kubectl get limitrange -n <app-namespace>
+
+   # Test network policies
+   kubectl get networkpolicies -n <app-namespace>
+   ```
+
+5. **Post-Deployment Verification**
+   - Confirm namespace isolation
+   - Validate resource quotas
+   - Test network policies
+   - Verify DNS access
+   - Check ArgoCD sync status
+
 ### ArgoCD Integration
 
 1. Install ArgoCD KCL plugin
