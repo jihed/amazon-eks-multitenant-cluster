@@ -1,6 +1,7 @@
 # resources/limits.k
 import k8s.api.core.v1 as corev1
-import base.config
+
+tenants = option("tenants") or []
 
 limits = [corev1.LimitRange {
     metadata = {
@@ -10,9 +11,9 @@ limits = [corev1.LimitRange {
     spec = {
         limits = [{
             type = "Container"
-            default = tenant.limitRange.default
-            defaultRequest = tenant.limitRange.defaultRequest
-            max = tenant.limitRange.max
+            default = t["limitRange"]["default"]
+            defaultRequest = t["limitRange"]["defaultRequest"]
+            max = t["limitRange"]["max"]
         }]
     }
-} for tenant in config.tenants for ns in tenant.namespaces]
+} for t in tenants for ns in t["namespaces"]]

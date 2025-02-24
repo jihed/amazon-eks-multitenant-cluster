@@ -1,6 +1,7 @@
 # resources/network.k
 import k8s.api.networking.v1 as networkingv1
-import base.config
+
+tenants = option("tenants") or []
 
 policies = [networkingv1.NetworkPolicy {
     metadata = {
@@ -16,7 +17,7 @@ policies = [networkingv1.NetworkPolicy {
                     {
                         namespaceSelector = {
                             matchLabels = {
-                                team = tenant.name
+                                team = t["name"]
                             }
                         }
                     }
@@ -46,7 +47,7 @@ policies = [networkingv1.NetworkPolicy {
                     {
                         namespaceSelector = {
                             matchLabels = {
-                                team = tenant.name
+                                team = t["name"]
                             }
                         }
                     }
@@ -71,4 +72,4 @@ policies = [networkingv1.NetworkPolicy {
             }
         ]
     }
-} for tenant in config.tenants for ns in tenant.namespaces]
+} for t in tenants for ns in t["namespaces"]]

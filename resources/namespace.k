@@ -1,14 +1,17 @@
 # resources/namespace.k
 import k8s.api.core.v1 as corev1
-import base.config
+import yaml
+
+# Parse tenants data
+tenants = option("tenants") or []
 
 namespaces = [corev1.Namespace {
     metadata = {
         name = ns
         labels = {
-            team = tenant.name
-            environment = tenant.env
+            team = t["name"]
+            environment = t["env"]
             "kubernetes.io/metadata.name" = ns
         }
     }
-} for tenant in config.tenants for ns in tenant.namespaces]
+} for t in tenants for ns in t["namespaces"]]
