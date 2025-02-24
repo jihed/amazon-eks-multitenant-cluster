@@ -4,14 +4,14 @@ env: production
 namespaces: 
   - ns1
   - ns2
-quota:
+resourceQuota:
   cpu: "4"
   memory: "8Gi"
   pods: "20"
   services: "10"
   configmaps: "20"
   secrets: "20"
-limits:
+limitRange:
   default:
     cpu: "500m"
     memory: "512Mi"
