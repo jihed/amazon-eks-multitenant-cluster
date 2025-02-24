@@ -4,5 +4,8 @@ import resources.quota
 import resources.limits
 import resources.network
 
-# Output all resources
-namespace.namespaces + quota.quotas + limits.limits + network.policies
+{
+    apiVersion = "v1"
+    kind = "List"
+    items = namespace.namespaces + quota.quotas + limits.limits + network.policies
+}
