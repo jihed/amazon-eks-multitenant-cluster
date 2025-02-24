@@ -6,13 +6,23 @@ limits = [corev1.LimitRange {
     metadata = {
         name = "${ns}-limits"
         namespace = ns
+        labels = {
+            "managed-by" = "kcl"
+        }
     }
-    spec = {
-        limits = [{
-            type = "Container"
-            default = tenant.limitRange.default
-            defaultRequest = tenant.limitRange.defaultRequest
-            max = tenant.limitRange.max
-        }]
-    }
+    spec.limits = [{
+        type = "Container"
+        default = {
+            "cpu" = tenant.limitRange.default.cpu
+            "memory" = tenant.limitRange.default.memory
+        }
+        defaultRequest = {
+            "cpu" = tenant.limitRange.defaultRequest.cpu
+            "memory" = tenant.limitRange.defaultRequest.memory
+        }
+        max = {
+            "cpu" = tenant.limitRange.max.cpu
+            "memory" = tenant.limitRange.max.memory
+        }
+    }]
 } for tenant in config.tenants for ns in tenant.namespaces]
