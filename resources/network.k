@@ -4,7 +4,7 @@ import base.config
 
 policies = [networkingv1.NetworkPolicy {
     metadata = {
-        name = "${ns}-netpol"
+        name = "${tenant.name}-${ns}-netpol"
         namespace = ns
         labels = {
             "managed-by" = "kcl"

@@ -4,7 +4,7 @@ import base.config
 
 quotas = [corev1.ResourceQuota {
     metadata = {
-        name = "${ns}-quota"
+        name = "${tenant.name}-quota"
         namespace = ns
         labels = {
             "managed-by" = "kcl"

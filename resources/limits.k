@@ -4,7 +4,7 @@ import base.config
 
 limits = [corev1.LimitRange {
     metadata = {
-        name = "${ns}-limits"
+        name = "${tenant.name}-${ns}-limits"
         namespace = ns
         labels = {
             "managed-by" = "kcl"
