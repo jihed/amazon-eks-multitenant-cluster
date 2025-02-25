@@ -1,6 +1,4 @@
 # clusters/production/tenants/config/base/schema.k
-import regex
-
 schema ResourceQuota:
     cpu?: str = "4"
     memory?: str = "8Gi"
