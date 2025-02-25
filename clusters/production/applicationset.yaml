@@ -11,7 +11,6 @@ spec:
         revision: feature/use_var #HEAD
         files:
         - path: "clusters/production/tenants/config/*/input.yaml"
-        requeueAfterSeconds: 30  # Add this for faster updates
   template:
     metadata:
       name: 'prod-{{path.basename}}-tenant'
@@ -31,13 +30,11 @@ spec:
         path: 'clusters/production/tenants/config'
         plugin:
           name: kcl-v1.0
-          env:
+          parameters:
             - name: TENANT_FILE
-              value: "input.yaml"
+              string: "{{path.basename}}/input.yaml"
             - name: ENVIRONMENT
-              value: "production"
-            - name: DEBUG
-              value: "true"
+              string: "production"
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
