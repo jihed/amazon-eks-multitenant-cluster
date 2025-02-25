@@ -11,10 +11,14 @@ spec:
         revision: feature/use_var #HEAD
         files:
         - path: "clusters/production/tenants/config/teams/team-*.yaml"
+        requeueAfterSeconds: 30  # Add this for faster updates
   template:
     metadata:
       name: 'prod-{{path.basename}}-tenant'
       namespace: argocd
+      annotations:
+        debug.path: '{{path}}'  # Add debug annotation
+        debug.file: '{{path.basename}}'  # Add debug annotation
       labels:
         tenant: '{{path.basename}}'
         environment: production
