@@ -32,7 +32,7 @@ spec:
           name: kcl-v1.0
           env:
             - name: TENANT_FILE
-              value: "teams/{{path.basename}}.yaml"
+              value: "{{path.basename}}/input.yaml"
             - name: ENVIRONMENT
               value: "production"
       destination:
