@@ -8,7 +8,7 @@ spec:
   generators:
     - git:
         repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
-        revision: feature/use_var #HEAD
+        revision: HEAD
         files:
         - path: "clusters/production/tenants/config/*/input.yaml"
   template:
@@ -26,7 +26,7 @@ spec:
       project: tenants-prod
       source:
         repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
-        targetRevision: feature/use_var #HEAD
+        targetRevision: HEAD
         path: 'clusters/production/tenants/config'
         plugin:
           name: kcl-v1.0
