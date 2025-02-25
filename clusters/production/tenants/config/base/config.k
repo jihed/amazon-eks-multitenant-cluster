@@ -7,6 +7,14 @@ import base.schema as s
 tenant_file = option("TENANT_FILE") or ""
 environment = option("ENVIRONMENT") or ""
 
+# if not tenant_file:
+#     assert "TENANT_FILE environment variable is required"
+# if not environment:
+#     assert "ENVIRONMENT environment variable is required"
+
+print("Processing tenant file:", tenant_file)
+print("Environment:", environment)
+
 # Read and validate single tenant
 tenant_data = yaml.decode(file.read(tenant_file))
 tenant = s.Tenant {

@@ -17,8 +17,9 @@ spec:
       name: 'prod-{{path.basename}}-tenant'
       namespace: argocd
       annotations:
-        debug.path: '{{path}}'  # Add debug annotation
-        debug.file: '{{path.basename}}'  # Add debug annotation
+        debug.path: '{{path}}'
+        debug.dir: '{{path.dir}}'
+        debug.basename: '{{path.basename}}'
       labels:
         tenant: '{{path.basename}}'
         environment: production
@@ -27,14 +28,16 @@ spec:
       source:
         repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
         targetRevision: feature/use_var #HEAD
-        path: clusters/production/tenants/config
+        path: 'clusters/production/tenants/config'
         plugin:
           name: kcl-v1.0
           env:
             - name: TENANT_FILE
-              value: "{{path.basename}}/input.yaml"
+              value: "input.yaml"
             - name: ENVIRONMENT
               value: "production"
+            - name: DEBUG
+              value: "true"
       destination:
         server: https://kubernetes.default.svc
         namespace: '{{path.basename}}'
