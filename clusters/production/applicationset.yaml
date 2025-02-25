@@ -10,12 +10,13 @@ spec:
         repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
         revision: feature/use_var #HEAD
         files:
-        - path: "clusters/production/tenants/config/tenants/*.yaml"
+        - path: "clusters/production/tenants/config/teams/team-*.yaml"
   template:
     metadata:
-      name: 'prod-{{name}}-tenant'
+      name: 'prod-{{path.basename}}-tenant'
+      namespace: argocd
       labels:
-        tenant: '{{name}}'
+        tenant: '{{path.basename}}'
         environment: production
     spec:
       project: tenants-prod
@@ -24,15 +25,15 @@ spec:
         targetRevision: feature/use_var #HEAD
         path: clusters/production/tenants/config
         plugin:
-          name: kcl
+          name: kcl-v1.0
           env:
             - name: TENANT_FILE
-              value: "tenants/{{values.path}}"
+              value: "teams/{{path.basename}}.yaml"
             - name: ENVIRONMENT
               value: "production"
       destination:
         server: https://kubernetes.default.svc
-        namespace: '{{name}}'
+        namespace: '{{path.basename}}'
       syncPolicy:
         automated:
           prune: true

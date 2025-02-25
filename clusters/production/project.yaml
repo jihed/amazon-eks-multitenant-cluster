@@ -7,7 +7,7 @@ metadata:
 spec:
   description: "Production Tenant Management"
   sourceRepos:
-    - "https://github.com/your-org/infrastructure-gitops"
+    - "https://github.com/jihed/amazon-eks-multitenant-cluster.git"
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc
