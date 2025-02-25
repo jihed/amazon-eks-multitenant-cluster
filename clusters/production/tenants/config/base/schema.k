@@ -1,8 +1,5 @@
-# base/schema.k
+# clusters/production/tenants/config/base/schema.k
 import regex
-
-schema Environment:
-    name: "production" | "staging" | "development"
 
 schema ResourceQuota:
     cpu?: str = "4"
