@@ -10,7 +10,7 @@ spec:
         repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
         revision: feature/use_var #HEAD
         files:
-        - path: "clusters/production/tenants/config/teams/team-*.yaml"
+        - path: "clusters/production/tenants/config/*/input.yaml"
         requeueAfterSeconds: 30  # Add this for faster updates
   template:
     metadata:
