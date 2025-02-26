@@ -58,8 +58,8 @@ deny_all_policies = [{
 # Allow shared services policies
 shared_services_policies = [{
     metadata = {
-        name = "${ns}-${config.tenant.env}-shared-services"
-        namespace = "${ns}-${config.tenant.env}"
+        name = "${config.tenant.prefix}-${ns}-shared-services"
+        namespace = "${config.tenant.prefix}-${ns}"
         labels = common.mergeLabels({
             "team": config.tenant.name
             "policy-type": "shared-services"
