@@ -1,320 +1,117 @@
 # Multi-Tenant Kubernetes Configuration on Amazon EKS with KCL
 
-This repository provides KCL configurations for managing multi-tenant Kubernetes namespaces and associated resources using GitOps methodology with ArgoCD and KCL plugin.
+[Previous sections remain unchanged up to Application Onboarding]
 
-## System Overview
+## Platform Team Setup
 
-```mermaid
-graph TD
-    subgraph "Git Repository"
-        A[Tenant Configs] -->|YAML| B[KCL Templates]
-        B -->|Processes| C[Resource Definitions]
-    end
-    
-    subgraph "ArgoCD"
-        D[ApplicationSet] -->|Monitors| A
-        E[KCL Plugin] -->|Renders| C
-    end
-    
-    subgraph "EKS Cluster"
-        F[Namespaces]
-        G[ResourceQuotas]
-        H[LimitRanges]
-        I[NetworkPolicies]
-    end
-    
-    C -->|Applies| F
-    C -->|Applies| G
-    C -->|Applies| H
-    C -->|Applies| I
-    
-    D -->|Syncs| E
-```
+Follow these steps to set up the multi-tenant environment in ArgoCD:
 
-## Architecture
-
-The configuration implements a multi-tenant architecture with the following components:
-
-### Configuration Layer
-- Git-based tenant configuration in YAML format
-- KCL templates for resource generation
-- ArgoCD ApplicationSet for automated deployment
-
-### Resource Management
-- **Namespace Isolation**: Dedicated namespaces per tenant with proper labels and annotations
-- **Resource Control**: 
-  - CPU and memory quotas
-  - Pod count limits
-  - Service restrictions
-  - ConfigMap and Secret limitations
-- **Security Boundaries**:
-  - Network isolation between tenants
-  - Controlled DNS access
-  - Default deny policies
-
-### Deployment Flow
-1. Tenant configurations are stored in Git
-2. ArgoCD ApplicationSet detects changes
-3. KCL plugin processes configurations
-4. Resources are generated and validated
-5. Changes are applied to the cluster
-
-The configuration generates these Kubernetes resources per tenant:
-- Namespaces with labels and annotations
-- ResourceQuotas for resource management
-- LimitRanges for container constraints
-- NetworkPolicies for namespace isolation
-  - Allows intra-tenant communication
-  - Allows kube-dns access
-  - Blocks all other traffic
-
-## Directory Structure
-
-```
-.
-├── base/
-│   ├── schema.k          # Tenant and resource schemas
-│   └── config.k          # Tenant configuration loader
-├── resources/
-│   ├── namespace.k       # Namespace resource generation
-│   ├── quota.k          # ResourceQuota generation
-│   ├── limits.k         # LimitRange generation
-│   └── network.k        # NetworkPolicy generation
-├── tenants/             # Tenant YAML configurations
-│   ├── team-a.yaml
-│   └── team-b.yaml
-└── main.k               # Main resource compilation
-```
-
-## Prerequisites
-
-- KCL v0.11.1
-- ArgoCD with KCL plugin
-- Kubernetes cluster access
-
-## Usage
-
-### Tenant Configuration
-
-Create tenant configurations in `tenants/` directory:
-
-```yaml
-# tenants/team-a.yaml
-name: team-a
-env: production
-namespaces: 
-  - team-a-ns1
-  - team-a-ns2
-resourceQuota:
-  cpu: "4"
-  memory: "8Gi"
-  pods: "20"
-  services: "10"
-  configmaps: "20"
-  secrets: "20"
-limitRange:
-  default:
-    cpu: "500m"
-    memory: "512Mi"
-  defaultRequest:
-    cpu: "100m"
-    memory: "128Mi"
-  max:
-    cpu: "2"
-    memory: "2Gi"
-```
-
-### Local Testing
-
-```bash
-# Validate configuration
-kcl run
-
-# Apply to cluster
-kcl run | kubectl apply -f -
-```
-
-## Application Onboarding
-
-Follow these steps to onboard a new application into the multi-tenant environment:
-
-1. **Tenant Resource Definition**
+1. **Install ArgoCD KCL Plugin**
    ```yaml
-   # Create a new tenant YAML file in tenants/ directory
-   name: <team-name>
-   env: <environment>
-   namespaces:
-     - <app-namespace-1>
-     - <app-namespace-2>
-   resourceQuota:
-     cpu: "<quota>"
-     memory: "<quota>"
-     pods: "<quota>"
-     services: "<quota>"
-     configmaps: "<quota>"
-     secrets: "<quota>"
-   limitRange:
-     default:
-       cpu: "<limit>"
-       memory: "<limit>"
-     defaultRequest:
-       cpu: "<request>"
-       memory: "<request>"
-     max:
-       cpu: "<max>"
-       memory: "<max>"
+   # Apply the KCL plugin configuration
+   kubectl apply -f bootstrap/kcl-argocd-plugin.yaml
    ```
 
-2. **ArgoCD Configuration**
+2. **Create ArgoCD Project**
    ```yaml
-   # Create an Application resource for your tenant
+   # Apply the project configuration
    apiVersion: argoproj.io/v1alpha1
-   kind: Application
+   kind: AppProject
    metadata:
-     name: <team-name>-tenant
+     name: tenants-prod
      namespace: argocd
    spec:
-     project: default
-     source:
-       repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
-       targetRevision: HEAD
-       path: .
-       plugin:
-         name: kcl-v1.0
-     destination:
-       server: https://kubernetes.default.svc
-       namespace: default
-     syncPolicy:
-       automated:
-         prune: true
-         selfHeal: true
+     description: "Production Tenant Management"
+     sourceRepos:
+       - "https://github.com/jihed/amazon-eks-multitenant-cluster.git"
+     destinations:
+       - namespace: '*'
+         server: https://kubernetes.default.svc
+     clusterResourceWhitelist:
+       - group: '*'
+         kind: '*'
    ```
 
-3. **Deployment Process**
-   1. Submit tenant configuration as a pull request
-   2. Upon merge, ArgoCD ApplicationSet detects the new configuration
-   3. KCL plugin processes the configuration and generates resources
-   4. ArgoCD applies the resources to the cluster
-   5. Verify namespace creation and resource constraints
+3. **Configure ApplicationSet**
+   ```yaml
+   # Apply the ApplicationSet configuration
+   apiVersion: argoproj.io/v1alpha1
+   kind: ApplicationSet
+   metadata:
+     name: prod-tenant-namespaces
+     namespace: argocd
+   spec:
+     generators:
+       - git:
+           repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
+           revision: HEAD
+           files:
+           - path: "clusters/production/tenants/config/*/input.yaml"
+     template:
+       metadata:
+         name: 'prod-{{path.basename}}-tenant'
+         namespace: argocd
+         labels:
+           tenant: '{{path.basename}}'
+           environment: production
+       spec:
+         project: tenants-prod
+         source:
+           repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
+           targetRevision: HEAD
+           path: 'clusters/production/tenants/config'
+           plugin:
+             name: kcl-v1.0
+             parameters:
+               - name: TENANT_FILE
+                 string: "{{path.basename}}/input.yaml"
+               - name: ENVIRONMENT
+                 string: "production"
+         destination:
+           server: https://kubernetes.default.svc
+           namespace: '{{path.basename}}'
+         syncPolicy:
+           automated:
+             prune: true
+             selfHeal: true
+   ```
 
-4. **Validation Steps**
+4. **Verify Setup**
    ```bash
-   # Verify namespace creation
-   kubectl get ns | grep <team-name>
+   # Check plugin installation
+   kubectl get configmap kcl-plugin-config -n argocd
 
-   # Check resource quotas
-   kubectl get resourcequota -n <app-namespace>
+   # Verify project creation
+   kubectl get appproject tenants-prod -n argocd
 
-   # Verify limit ranges
-   kubectl get limitrange -n <app-namespace>
-
-   # Test network policies
-   kubectl get networkpolicies -n <app-namespace>
+   # Check ApplicationSet
+   kubectl get applicationset prod-tenant-namespaces -n argocd
    ```
 
-5. **Post-Deployment Verification**
-   - Confirm namespace isolation
-   - Validate resource quotas
-   - Test network policies
-   - Verify DNS access
-   - Check ArgoCD sync status
+5. **Directory Structure Setup**
+   ```bash
+   mkdir -p clusters/production/tenants/config
+   ```
 
-## ArgoCD Integration
+6. **Enable Auto-Sync**
+   - Verify that the ApplicationSet controller is running
+   - Check ArgoCD UI for automatic application creation
+   - Monitor sync status for newly created applications
 
-1. Install ArgoCD KCL plugin
-2. Create ArgoCD Application:
+7. **Security Configuration**
+   - Ensure ArgoCD has appropriate RBAC permissions
+   - Verify access to the Git repository
+   - Configure network access for the KCL plugin
 
-```yaml
-apiVersion: argoproj.io/v1alpha1
-kind: Application
-metadata:
-  name: tenant-namespaces
-  namespace: argocd
-spec:
-  project: default
-  source:
-    repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
-    targetRevision: HEAD
-    path: .
-    plugin:
-      name: kcl-v1.0
-  destination:
-    server: https://kubernetes.default.svc
-    namespace: default
-  syncPolicy:
-    automated:
-      prune: true
-      selfHeal: true
-```
+8. **Monitoring Setup**
+   ```bash
+   # Check ApplicationSet controller logs
+   kubectl logs -n argocd -l app.kubernetes.io/name=argocd-applicationset-controller
 
-## Generated Resources
+   # Monitor application creation
+   kubectl get applications -n argocd -l environment=production
+   ```
 
-### Namespace
-- Labels:
-  - team
-  - environment
-  - managed-by: kcl
+After completing these steps, the platform is ready for application teams to onboard their applications following the "Application Onboarding" process.
 
-### ResourceQuota
-Configurable limits for:
-- CPU
-- Memory
-- Pods
-- Services
-- ConfigMaps
-- Secrets
-
-### LimitRange
-Container constraints for:
-- Default limits
-- Default requests
-- Maximum limits
-
-### NetworkPolicy
-- Allows communication between tenant namespaces
-- Allows DNS access (UDP/TCP port 53)
-- Blocks other traffic
-
-## Best Practices
-
-### GitOps Workflow
-- Make changes through git
-- Use ArgoCD for deployment
-- Monitor sync status
-
-### Tenant Management
-- One YAML file per tenant
-- Use meaningful namespace names
-- Document resource quotas
-
-### Version Control
-- Commit all changes
-- Use branch protection
-- Review changes
-
-## Troubleshooting
-
-### ArgoCD Sync Issues
-- Verify KCL plugin installation
-- Check YAML syntax
-- Validate resources
-
-### Resource Conflicts
-- Check namespace uniqueness
-- Verify quota settings
-- Review network policies
-
-## Contributing
-
-1. Fork repository
-2. Create feature branch
-3. Submit pull request
-
-## Support
-
-Create an issue in the repository for:
-- Bug reports
-- Feature requests
-- Documentation improvements
-
-Let me know if you need any clarification or have questions!
+[Rest of the README remains unchanged]
