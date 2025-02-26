@@ -17,7 +17,6 @@ spec:
       namespace: argocd
       annotations:
         debug.path: '{{path}}'
-        debug.dir: '{{path.dir}}'
         debug.basename: '{{path.basename}}'
       labels:
         tenant: '{{path.basename}}'
