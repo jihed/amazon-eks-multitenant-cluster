@@ -16,6 +16,7 @@ assert tenant_data, "Empty tenant configuration"
 assert tenant_data.name, "Tenant name is required"
 assert tenant_data.env, "Tenant environment is required"
 assert tenant_data.namespaces, "Tenant namespaces are required"
+assert tenant_data.accessControl, "Access control configuration is required"
 
 # Create and export tenant configuration
 tenant = s.Tenant {
@@ -44,12 +45,15 @@ tenant = s.Tenant {
             memory = tenant_data?.limitRange?.max?.memory
         }
     }
-}
-
-# Export the tenant configuration
-schema Config:
-    tenant: s.Tenant
-
-config = Config {
-    tenant = tenant
+    accessControl = s.AccessControl {
+        groups = [s.AccessGroup {
+            name = group.name
+            type = group.type
+            namespacePattern = group.namespacePattern
+            iamRoles = [s.IamRole {
+                roleArn = role.roleArn
+                username = role.username
+            } for role in group.iamRoles]
+        } for group in tenant_data.accessControl.groups]
+    }
 }

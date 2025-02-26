@@ -1,15 +1,26 @@
 name: team-a
-env: prod  
+env: prod
 namespaces:
-  - team-a-apps
-  - team-a-tools
+  - apps
+  - tools
+accessControl:
+  groups:
+    - name: apps-admin
+      type: admin
+      namespacePattern: "apps"
+      iamRoles:
+        - roleArn: "arn:aws:iam::123456789012:role/team-a-admin"
+          username: "admin-user"
+    - name: tools-developer
+      type: developer
+      namespacePattern: "tools"
+      iamRoles:
+        - roleArn: "arn:aws:iam::123456789012:role/team-a-developer"
+          username: "developer-user"
 resourceQuota:
   cpu: "4"
   memory: "8Gi"
   pods: "20"
-  services: "10"
-  configmaps: "20"
-  secrets: "20"
 limitRange:
   default:
     cpu: "500m"

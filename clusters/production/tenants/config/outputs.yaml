@@ -4,7 +4,7 @@ items:
 - apiVersion: v1
   kind: Namespace
   metadata:
-    name: team-a-apps-prod
+    name: apps-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -18,7 +18,7 @@ items:
 - apiVersion: v1
   kind: Namespace
   metadata:
-    name: team-a-tools-prod
+    name: tools-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -32,8 +32,8 @@ items:
 - apiVersion: v1
   kind: ResourceQuota
   metadata:
-    name: team-a-apps-prod-quota
-    namespace: team-a-apps-prod
+    name: apps-prod-quota
+    namespace: apps-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -47,14 +47,11 @@ items:
       cpu: '4'
       memory: '8Gi'
       pods: '20'
-      services: '10'
-      configmaps: '20'
-      secrets: '20'
 - apiVersion: v1
   kind: ResourceQuota
   metadata:
-    name: team-a-tools-prod-quota
-    namespace: team-a-tools-prod
+    name: tools-prod-quota
+    namespace: tools-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -68,14 +65,11 @@ items:
       cpu: '4'
       memory: '8Gi'
       pods: '20'
-      services: '10'
-      configmaps: '20'
-      secrets: '20'
 - apiVersion: v1
   kind: LimitRange
   metadata:
-    name: team-a-apps-prod-limits
-    namespace: team-a-apps-prod
+    name: apps-prod-limits
+    namespace: apps-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -99,8 +93,8 @@ items:
 - apiVersion: v1
   kind: LimitRange
   metadata:
-    name: team-a-tools-prod-limits
-    namespace: team-a-tools-prod
+    name: tools-prod-limits
+    namespace: tools-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -124,8 +118,8 @@ items:
 - apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
   metadata:
-    name: team-a-apps-prod-deny-all
-    namespace: team-a-apps-prod
+    name: apps-prod-deny-all
+    namespace: apps-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -143,8 +137,8 @@ items:
 - apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
   metadata:
-    name: team-a-tools-prod-deny-all
-    namespace: team-a-tools-prod
+    name: tools-prod-deny-all
+    namespace: tools-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -162,8 +156,8 @@ items:
 - apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
   metadata:
-    name: team-a-apps-prod-shared-services
-    namespace: team-a-apps-prod
+    name: apps-prod-shared-services
+    namespace: apps-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -194,7 +188,7 @@ items:
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: kube-system
-      '':
+      ports:
       - port: 53
         protocol: UDP
       - port: 53
@@ -203,21 +197,21 @@ items:
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: monitoring
-      '':
+      ports:
       - port: 9090
         protocol: TCP
     - to:
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: logging
-      '':
+      ports:
       - port: 24224
         protocol: TCP
 - apiVersion: networking.k8s.io/v1
   kind: NetworkPolicy
   metadata:
-    name: team-a-tools-prod-shared-services
-    namespace: team-a-tools-prod
+    name: tools-prod-shared-services
+    namespace: tools-prod
     labels:
       managed-by: kcl
       app.kubernetes.io/managed-by: kcl
@@ -248,7 +242,7 @@ items:
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: kube-system
-      '':
+      ports:
       - port: 53
         protocol: UDP
       - port: 53
@@ -257,13 +251,259 @@ items:
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: monitoring
-      '':
+      ports:
       - port: 9090
         protocol: TCP
     - to:
       - namespaceSelector:
           matchLabels:
             kubernetes.io/metadata.name: logging
-      '':
+      ports:
       - port: 24224
         protocol: TCP
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: apps-admin
+    name: apps-admin-admin
+    namespace: apps-prod
+  rules:
+  - apiGroups:
+    - '*'
+    resources:
+    - '*'
+    verbs:
+    - '*'
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: apps-admin
+    name: apps-admin-admin
+    namespace: tools-prod
+  rules:
+  - apiGroups:
+    - '*'
+    resources:
+    - '*'
+    verbs:
+    - '*'
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: tools-developer
+    name: tools-developer-developer
+    namespace: apps-prod
+  rules:
+  - apiGroups:
+    - ''
+    resources:
+    - pods
+    - services
+    - configmaps
+    - secrets
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - apps
+    resources:
+    - deployments
+    - statefulsets
+    - daemonsets
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - networking.k8s.io
+    resources:
+    - ingresses
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - batch
+    resources:
+    - jobs
+    - cronjobs
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: Role
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: tools-developer
+    name: tools-developer-developer
+    namespace: tools-prod
+  rules:
+  - apiGroups:
+    - ''
+    resources:
+    - pods
+    - services
+    - configmaps
+    - secrets
+    - persistentvolumeclaims
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - apps
+    resources:
+    - deployments
+    - statefulsets
+    - daemonsets
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - networking.k8s.io
+    resources:
+    - ingresses
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+  - apiGroups:
+    - batch
+    resources:
+    - jobs
+    - cronjobs
+    verbs:
+    - get
+    - list
+    - watch
+    - create
+    - update
+    - patch
+    - delete
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: apps-admin
+    name: apps-admin-admin
+    namespace: apps-prod
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: apps-admin-admin
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: admin-user
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: apps-admin
+    name: apps-admin-admin
+    namespace: tools-prod
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: apps-admin-admin
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: admin-user
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: tools-developer
+    name: tools-developer-developer
+    namespace: apps-prod
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: tools-developer-developer
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: developer-user
+- apiVersion: rbac.authorization.k8s.io/v1
+  kind: RoleBinding
+  metadata:
+    labels:
+      managed-by: kcl
+      app.kubernetes.io/managed-by: kcl
+      app.kubernetes.io/created-by: tenant-operator
+      team: team-a
+      access-group: tools-developer
+    name: tools-developer-developer
+    namespace: tools-prod
+  roleRef:
+    apiGroup: rbac.authorization.k8s.io
+    kind: Role
+    name: tools-developer-developer
+  subjects:
+  - apiGroup: rbac.authorization.k8s.io
+    kind: User
+    name: developer-user

@@ -39,10 +39,10 @@ SHARED_NAMESPACES = [
 # Deny-all policies (one per namespace)
 deny_all_policies = [{
     metadata = {
-        name = "${ns}-${config.config.tenant.env}-deny-all"
-        namespace = "${ns}-${config.config.tenant.env}"
+        name = "${ns}-${config.tenant.env}-deny-all"
+        namespace = "${ns}-${config.tenant.env}"
         labels = common.mergeLabels({
-            "team": config.config.tenant.name
+            "team": config.tenant.name
             "policy-type": "deny-all"
         })
         annotations = common.mergeAnnotations({
@@ -53,15 +53,15 @@ deny_all_policies = [{
         podSelector = {}
         policyTypes = ["Ingress", "Egress"]
     }
-} for ns in config.config.tenant.namespaces]
+} for ns in config.tenant.namespaces]
 
 # Allow shared services policies
 shared_services_policies = [{
     metadata = {
-        name = "${ns}-${config.config.tenant.env}-shared-services"
-        namespace = "${ns}-${config.config.tenant.env}"
+        name = "${ns}-${config.tenant.env}-shared-services"
+        namespace = "${ns}-${config.tenant.env}"
         labels = common.mergeLabels({
-            "team": config.config.tenant.name
+            "team": config.tenant.name
             "policy-type": "shared-services"
         })
         annotations = common.mergeAnnotations({
@@ -77,8 +77,8 @@ shared_services_policies = [{
             from = [{
                 namespaceSelector = {
                     matchLabels = {
-                        "team": config.config.tenant.name
-                        "environment": config.config.tenant.env
+                        "team": config.tenant.name
+                        "environment": config.tenant.env
                     }
                 }
             }]
@@ -91,8 +91,8 @@ shared_services_policies = [{
                 to = [{
                     namespaceSelector = {
                         matchLabels = {
-                            "team": config.config.tenant.name
-                            "environment": config.config.tenant.env
+                            "team": config.tenant.name
+                            "environment": config.tenant.env
                         }
                     }
                 }]
@@ -111,7 +111,7 @@ shared_services_policies = [{
             } for service in SHARED_NAMESPACES
         ]
     }
-} for ns in config.config.tenant.namespaces]
+} for ns in config.tenant.namespaces]
 
 # Combine all policies
 all_policies = deny_all_policies + shared_services_policies
