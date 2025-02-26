@@ -1,18 +1,16 @@
-# resources/namespace.k
-import k8s.api.core.v1 as corev1
 import base.config
+import base.common
 
-namespaces = [corev1.Namespace {
+namespaces = [{
     metadata = {
-        name = ns
-        labels = {
-            "team" = config.tenant.name
-            "environment" = config.tenant.env
-            "managed-by" = "kcl"
-        }
-        annotations = {
-            "team.kubernetes.io/name" = config.tenant.name
-            "team.kubernetes.io/environment" = config.tenant.env
-        }
+        name = "${ns}-${config.tenant.env}"  # Add environment suffix
+        labels = common.mergeLabels({
+            "team": config.tenant.name
+            "environment": config.tenant.env
+        })
+        annotations = common.mergeAnnotations({
+            "team.kubernetes.io/name": config.tenant.name
+            "team.kubernetes.io/environment": config.tenant.env
+        })
     }
 } for ns in config.tenant.namespaces]

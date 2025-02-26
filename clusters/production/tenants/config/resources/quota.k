@@ -1,23 +1,25 @@
-# resources/quota.k
-import k8s.api.core.v1 as corev1
 import base.config
+import base.common
 
-quotas = [corev1.ResourceQuota {
+quotas = [{
     metadata = {
-        name = "${ns}-quota"
-        namespace = ns
-        labels = {
-            "managed-by" = "kcl"
-        }
+        name = "${ns}-${config.tenant.env}-quota"  # Add environment suffix
+        namespace = "${ns}-${config.tenant.env}"    # Match namespace name
+        labels = common.mergeLabels({
+            "team": config.tenant.name
+        })
+        annotations = common.mergeAnnotations({
+            "team.kubernetes.io/resource-quota": "true"
+        })
     }
     spec = {
         hard = {
-            "cpu" = config.tenant.resourceQuota.cpu
-            "memory" = config.tenant.resourceQuota.memory
-            "pods" = config.tenant.resourceQuota.pods
-            "services" = config.tenant.resourceQuota.services
-            "configmaps" = config.tenant.resourceQuota.configmaps
-            "secrets" = config.tenant.resourceQuota.secrets
+            "cpu": config.tenant.resourceQuota.cpu
+            "memory": config.tenant.resourceQuota.memory
+            "pods": config.tenant.resourceQuota.pods
+            "services": config.tenant.resourceQuota.services
+            "configmaps": config.tenant.resourceQuota.configmaps
+            "secrets": config.tenant.resourceQuota.secrets
         }
     }
 } for ns in config.tenant.namespaces]

@@ -1,8 +1,8 @@
-# clusters/production/tenants/config/tenants/team-a.yaml
 name: team-a
-namespaces: 
-  - team-a-ns1
-  - team-a-ns2
+env: prod  
+namespaces:
+  - team-a-apps
+  - team-a-tools
 resourceQuota:
   cpu: "4"
   memory: "8Gi"

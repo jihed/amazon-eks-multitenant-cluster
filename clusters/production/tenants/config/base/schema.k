@@ -1,4 +1,5 @@
-# clusters/production/tenants/config/base/schema.k
+import regex
+
 schema ResourceQuota:
     cpu?: str = "4"
     memory?: str = "8Gi"
@@ -31,3 +32,12 @@ schema Tenant:
     namespaces: [str]
     resourceQuota: ResourceQuota
     limitRange: LimitRange
+
+    if regex.match(r"^[a-zA-Z0-9][-a-zA-Z0-9]*[a-zA-Z0-9]$", name) == False:
+        assert "Invalid tenant name format"
+    if len(name) > 63:
+        assert "Tenant name must be <= 63 characters"
+    if env not in ["dev", "staging", "prod"]:
+        assert "Environment must be dev, staging, or prod"
+    if len(namespaces) == 0:
+        assert "At least one namespace is required"
