@@ -2,8 +2,8 @@ import base.config as config
 import base.common as common
 
 
-# Generate ArgoCD Project
-argocd_project = [
+# Generate ArgoCD Project only if applications are defined
+argocd_project = [] if not config.tenant?.applications else [
     {
         apiVersion = "argoproj.io/v1alpha1"
         kind = "AppProject"
