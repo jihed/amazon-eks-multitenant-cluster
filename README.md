@@ -176,7 +176,7 @@ Follow these steps to onboard a new application into the multi-tenant environmen
    spec:
      project: default
      source:
-       repoURL: <your-git-repo>
+       repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
        targetRevision: HEAD
        path: .
        plugin:
@@ -219,7 +219,7 @@ Follow these steps to onboard a new application into the multi-tenant environmen
    - Verify DNS access
    - Check ArgoCD sync status
 
-### ArgoCD Integration
+## ArgoCD Integration
 
 1. Install ArgoCD KCL plugin
 2. Create ArgoCD Application:
@@ -233,11 +233,11 @@ metadata:
 spec:
   project: default
   source:
-    repoURL: https://your-git-repo
+    repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
     targetRevision: HEAD
     path: .
     plugin:
-      name: kcl
+      name: kcl-v1.0
   destination:
     server: https://kubernetes.default.svc
     namespace: default
