@@ -10,13 +10,13 @@ accessControl:
       namespacePattern: "apps"
       iamRoles:
         - roleArn: "arn:aws:iam::123456789012:role/team-a-admin"
-          username: "admin-user"
+          username: "team-a-admin-user"
     - name: tools-developer
       type: developer
       namespacePattern: "tools"
       iamRoles:
         - roleArn: "arn:aws:iam::123456789012:role/team-a-developer"
-          username: "developer-user"
+          username: "team-a-developer-user"
 resourceQuota:
   cpu: "4"
   memory: "8Gi"

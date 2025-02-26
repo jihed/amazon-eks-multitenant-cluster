@@ -1,16 +1,26 @@
-# tenants/team-a.yaml
 name: team-b
-env: dev
-namespaces: 
-  - ns1
-  - ns2
+env: prod
+namespaces:
+  - apps
+  - tools
+accessControl:
+  groups:
+    - name: apps-admin
+      type: admin
+      namespacePattern: "apps"
+      iamRoles:
+        - roleArn: "arn:aws:iam::123456789012:role/team-b-admin"
+          username: "team-b-admin-user"
+    - name: tools-developer
+      type: developer
+      namespacePattern: "tools"
+      iamRoles:
+        - roleArn: "arn:aws:iam::123456789012:role/team-b-developer"
+          username: "team-b-developer-user"
 resourceQuota:
   cpu: "4"
   memory: "8Gi"
   pods: "20"
-  services: "10"
-  configmaps: "20"
-  secrets: "20"
 limitRange:
   default:
     cpu: "500m"
