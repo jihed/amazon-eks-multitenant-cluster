@@ -3,6 +3,18 @@ env: prod
 namespaces:
   - apps
   - tools
+applications:
+  - name: frontend
+    gitRepo:
+      url: https://github.com/team-a/frontend
+      path: k8s/overlays/prod
+      branch: main
+      targetNamespace: apps
+  - name: backend
+    gitRepo:
+      url: https://github.com/team-a/backend
+      path: k8s/overlays/prod
+      targetNamespace: apps
 accessControl:
   groups:
     - name: apps-admin
@@ -10,13 +22,7 @@ accessControl:
       namespacePattern: "apps"
       iamRoles:
         - roleArn: "arn:aws:iam::123456789012:role/team-a-admin"
-          username: "team-a-admin-user"
-    - name: tools-developer
-      type: developer
-      namespacePattern: "tools"
-      iamRoles:
-        - roleArn: "arn:aws:iam::123456789012:role/team-a-developer"
-          username: "team-a-developer-user"
+          username: "admin-user"
 resourceQuota:
   cpu: "4"
   memory: "8Gi"

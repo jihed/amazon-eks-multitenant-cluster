@@ -16,14 +16,13 @@ assert tenant_data, "Empty tenant configuration"
 assert tenant_data.name, "Tenant name is required"
 assert tenant_data.env, "Tenant environment is required"
 assert tenant_data.namespaces, "Tenant namespaces are required"
-assert tenant_data.accessControl, "Access control configuration is required"
 
-# Create and export tenant configuration
+# Create tenant with validation
 tenant = s.Tenant {
     name = str(tenant_data.name)
     env = str(tenant_data.env)
-    namespaces = [str(ns) for ns in tenant_data.namespaces]
     prefix = "${tenant_data.name}-${tenant_data.env}"
+    namespaces = [str(ns) for ns in tenant_data.namespaces]
     resourceQuota = s.ResourceQuota {
         cpu = tenant_data?.resourceQuota?.cpu
         memory = tenant_data?.resourceQuota?.memory
@@ -57,4 +56,15 @@ tenant = s.Tenant {
             } for role in group.iamRoles]
         } for group in tenant_data.accessControl.groups]
     }
+    # Add applications if they exist in the input
+    if tenant_data.applications:
+        applications = [s.Application {
+            name = app.name
+            gitRepo = s.GitRepo {
+                url = app.gitRepo.url
+                path = app.gitRepo.path
+                branch = app.gitRepo?.branch or "main"
+                targetNamespace = app.gitRepo.targetNamespace
+            }
+        } for app in tenant_data.applications]
 }
