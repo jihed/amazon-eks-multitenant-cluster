@@ -3,8 +3,8 @@ import base.common
 
 limits = [{
     metadata = {
-        name = "${ns}-${config.tenant.env}-limits"  # Add environment suffix
-        namespace = "${ns}-${config.tenant.env}"     # Match namespace name
+        name = "${config.tenant.prefix}-${ns}-limits"  
+        namespace = "${config.tenant.prefix}-${ns}"    
         labels = common.mergeLabels({
             "team": config.tenant.name
         })

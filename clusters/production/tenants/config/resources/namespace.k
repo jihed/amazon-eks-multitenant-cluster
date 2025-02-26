@@ -3,7 +3,7 @@ import base.common
 
 namespaces = [{
     metadata = {
-        name = "${ns}-${config.tenant.env}"  # Add environment suffix
+        name = "${config.tenant.prefix}-${ns}"
         labels = common.mergeLabels({
             "team": config.tenant.name
             "environment": config.tenant.env

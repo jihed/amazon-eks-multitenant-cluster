@@ -3,8 +3,8 @@ import base.common
 
 quotas = [{
     metadata = {
-        name = "${ns}-${config.tenant.env}-quota"  # Add environment suffix
-        namespace = "${ns}-${config.tenant.env}"    # Match namespace name
+        name = "${config.tenant.prefix}-${ns}-quota"  # Add environment suffix
+        namespace = "${config.tenant.prefix}-${ns}"    # Match namespace name
         labels = common.mergeLabels({
             "team": config.tenant.name
         })

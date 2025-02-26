@@ -23,6 +23,7 @@ tenant = s.Tenant {
     name = str(tenant_data.name)
     env = str(tenant_data.env)
     namespaces = [str(ns) for ns in tenant_data.namespaces]
+    prefix = "${tenant_data.name}-${tenant_data.env}"
     resourceQuota = s.ResourceQuota {
         cpu = tenant_data?.resourceQuota?.cpu
         memory = tenant_data?.resourceQuota?.memory

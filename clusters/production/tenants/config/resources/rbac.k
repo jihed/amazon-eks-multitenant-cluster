@@ -47,7 +47,7 @@ roles = [
     rbacv1.Role {
         metadata = {
             name = "${group.name}-${group.type}"
-            namespace = "${ns}-${config.tenant.env}"
+            namespace = "${config.tenant.prefix}-${ns}"
             labels = common.mergeLabels({
                 "team": config.tenant.name
                 "access-group": group.name
@@ -63,7 +63,7 @@ role_bindings = [
     rbacv1.RoleBinding {
         metadata = {
             name = "${group.name}-${group.type}"
-            namespace = "${ns}-${config.tenant.env}"
+            namespace = "${config.tenant.prefix}-${ns}"
             labels = common.mergeLabels({
                 "team": config.tenant.name
                 "access-group": group.name

@@ -39,8 +39,8 @@ SHARED_NAMESPACES = [
 # Deny-all policies (one per namespace)
 deny_all_policies = [{
     metadata = {
-        name = "${ns}-${config.tenant.env}-deny-all"
-        namespace = "${ns}-${config.tenant.env}"
+        name = "${config.tenant.prefix}-${ns}-deny-all"
+        namespace = "${config.tenant.prefix}-${ns}"
         labels = common.mergeLabels({
             "team": config.tenant.name
             "policy-type": "deny-all"

@@ -1,5 +1,3 @@
-import regex
-
 schema ResourceQuota:
     cpu?: str = "4"
     memory?: str = "8Gi"
@@ -43,6 +41,7 @@ schema Tenant:
     name: str
     env: str
     namespaces: [str]
+    prefix: str
     resourceQuota: ResourceQuota
     limitRange: LimitRange
     accessControl: AccessControl
