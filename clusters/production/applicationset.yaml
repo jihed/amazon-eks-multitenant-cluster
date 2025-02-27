@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: tenant-manager-prod
+  name: tenant-generator-prod
   namespace: argocd
 spec:
   generators:
