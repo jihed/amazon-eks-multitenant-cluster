@@ -2,10 +2,10 @@ digraph INFRA {
   node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
   "ProdTenantGenerator" [ label = "ProdTenantGenerator
 (ApplicationSet)", shape =rectangle ];
-  "kcl-plugin-config" [ label = "kcl-plugin-config
-(ConfigMap)", shape =rectangle ];
   "tenants-prod" [ label = "tenants-prod
 (AppProject)", shape =rectangle ];
+  "kcl-plugin-config" [ label = "kcl-plugin-config
+(ConfigMap)", shape =rectangle ];
   "team-a-prod" [ label = "team-a-prod
 (Application)", shape =rectangle ];
   "team-b-prod" [ label = "team-b-prod
@@ -14,29 +14,8 @@ digraph INFRA {
 (Application)", shape =rectangle, fillcolor = "#B7E0FF" ];
   "backend" [ label = "backend
 (Application)", shape =rectangle, fillcolor = "#B7E0FF" ];
-  "team-a-apps-namespace" [ label = "team-a-apps-namespace
-(Namespace)", shape =rectangle ];
-  "team-a-tools-namespace" [ label = "team-a-tools-namespace
-(Namespace)", shape =rectangle ];
-  "team-a-resource-quota" [ label = "team-a-resource-quota
-(ResourceQuota)", shape =rectangle ];
-  "team-a-limit-range" [ label = "team-a-limit-range
-(LimitRange)", shape =rectangle ];
-  "team-a-apps-admin-role" [ label = "team-a-apps-admin-role
-(Role)", shape =rectangle ];
-  "team-a-apps-admin-rolebinding" [ label = "team-a-apps-admin-rolebinding
-(RoleBinding)", shape =rectangle ];
   "team-a-prod" -> "ProdTenantGenerator";
   "team-b-prod" -> "ProdTenantGenerator";
   "guestbook" -> "team-a-prod";
   "backend" -> "team-a-prod";
-  "team-a-apps-namespace" -> "team-a-prod";
-  "team-a-tools-namespace" -> "team-a-prod";
-  "team-a-resource-quota" -> "team-a-prod";
-  "team-a-limit-range" -> "team-a-prod";
-  "team-a-apps-admin-role" -> "team-a-prod";
-  "team-a-apps-admin-role" -> "team-a-apps-namespace";
-  "team-a-apps-admin-rolebinding" -> "team-a-prod";
-  "team-a-apps-admin-rolebinding" -> "team-a-apps-namespace";
-  "team-a-apps-admin-rolebinding" -> "team-a-apps-admin-role";
 }

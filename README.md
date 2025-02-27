@@ -1,31 +1,31 @@
 # Amazon EKS Tenant Manager: Automated Multi-Tenant Kubernetes Management with Argo CD
 
-The Amazon EKS Tenant Manager is a GitOps-based solution that automates the management of multiple tenants in Amazon EKS clusters using Argo CD. It provides a declarative approach to tenant configuration, resource allocation, and access control, enabling teams to efficiently manage their Kubernetes resources while maintaining isolation and security.
+The Amazon EKS Tenant Manager is a GitOps-based solution that automates the management of multiple tenants in Amazon EKS clusters using Argo CD. It provides a declarative approach to tenant configuration, resource management, and access control, enabling teams to efficiently manage their Kubernetes resources while maintaining isolation and security.
 
-This project implements a multi-tenant management system that handles tenant onboarding, namespace creation, resource quotas, and access control through a combination of Argo CD ApplicationSets and KCL (Kube Conformity Language). Teams can define their infrastructure requirements in YAML configurations, which are automatically translated into Kubernetes resources with proper isolation and security controls. The system supports fine-grained access control through IAM integration and enforces resource constraints through quotas and limit ranges.
+This project implements a multi-tenant architecture that automatically provisions and manages tenant namespaces, resource quotas, and access controls through GitOps practices. It leverages Argo CD's ApplicationSet controller and KCL (Kube Conformity Language) plugin to generate and maintain Kubernetes manifests based on tenant-specific configurations. The solution supports fine-grained access control through IAM role integration, resource quotas enforcement, and automated application deployment across tenant spaces.
 
 ## Repository Structure
 ```
 .
 ├── bootstrap/
-│   └── kcl-argocd-plugin.yaml      # Argo CD plugin configuration for KCL integration
+│   └── kcl-argocd-plugin.yaml     # Argo CD plugin configuration for KCL integration
 ├── clusters/
-│   └── production/                  # Production environment configurations
-│       ├── applicationset.yaml      # Tenant ApplicationSet generator configuration
-│       ├── project.yaml            # Argo CD project definition for production
-│       └── tenants/                # Tenant-specific configurations
-│           ├── team-a/             # Team A tenant configuration
-│           └── team-b/             # Team B tenant configuration
-└── docs/                           # Documentation assets and diagrams
+│   └── production/                 # Production environment configurations
+│       ├── applicationset.yaml     # Tenant ApplicationSet generator configuration
+│       ├── project.yaml           # Argo CD project definition for production
+│       └── tenants/               # Tenant-specific configurations
+│           ├── team-a/            # Team A tenant configuration
+│           └── team-b/            # Team B tenant configuration
+└── docs/                          # Documentation assets
 ```
 
 ## Usage Instructions
 
 ### Prerequisites
 - Amazon EKS cluster
-- Argo CD installed and configured
-- KCL CLI tool
-- kubectl with cluster admin access
+- Argo CD installed and configured on the cluster
+- kubectl CLI tool
+- Access to AWS IAM for role configuration
 - Git repository access
 
 ### Installation
@@ -66,11 +66,29 @@ accessControl:
 ```
 
 2. Commit and push the configuration to the Git repository
-3. Argo CD will automatically detect and apply the changes
+3. Argo CD will automatically detect and apply the new tenant configuration
 
 ### More Detailed Examples
 
-**Example 1: Deploying Applications for a Tenant**
+#### Configuring Resource Quotas
+```yaml
+resourceQuota:
+  cpu: "4"
+  memory: "8Gi"
+  pods: "20"
+limitRange:
+  default:
+    cpu: "500m"
+    memory: "512Mi"
+  defaultRequest:
+    cpu: "100m"
+    memory: "128Mi"
+  max:
+    cpu: "2"
+    memory: "2Gi"
+```
+
+#### Deploying Applications for a Tenant
 ```yaml
 applications:
   - name: guestbook
@@ -81,105 +99,67 @@ applications:
       targetNamespace: apps
 ```
 
-**Example 2: Setting Resource Quotas**
-```yaml
-resourceQuota:
-  cpu: "4"
-  memory: "8Gi"
-  pods: "20"
-limitRange:
-  default:
-    cpu: "500m"
-    memory: "512Mi"
-```
-
 ### Troubleshooting
 
-**Issue: ApplicationSet not generating applications**
-- Check the Argo CD ApplicationSet controller logs:
-```bash
-kubectl logs -n argocd -l app.kubernetes.io/name=argocd-applicationset-controller
-```
-- Verify the Git repository path pattern in applicationset.yaml
-- Ensure tenant input.yaml files are in the correct location
+#### Common Issues
 
-**Issue: KCL plugin errors**
-- Enable debug logging in Argo CD:
+1. ApplicationSet not generating applications
+- Check ApplicationSet status:
 ```bash
-kubectl patch configmap/argocd-cm -n argocd --type merge -p '{"data":{"logging.level":"debug"}}'
+kubectl get applicationset -n argocd
+kubectl describe applicationset ProdTenantGenerator -n argocd
 ```
-- Check the Argo CD repo-server logs:
+- Verify Git repository access and path patterns
+
+2. KCL Plugin Issues
+- Check plugin configuration:
+```bash
+kubectl get configmap kcl-plugin-config -n argocd -o yaml
+```
+- Verify plugin logs:
 ```bash
 kubectl logs -n argocd -l app.kubernetes.io/name=argocd-repo-server
 ```
 
 ## Data Flow
 
-The EKS Tenant Manager processes tenant configurations through a GitOps pipeline that transforms YAML definitions into Kubernetes resources using KCL and Argo CD.
+The tenant management system processes configurations through a GitOps pipeline that transforms tenant definitions into Kubernetes resources.
 
 ```ascii
-Git Repo                 Argo CD                     Kubernetes
-[input.yaml] --> [ApplicationSet Generator] --> [Tenant Resources]
-     |                    |                           |
-     |                    v                           |
-     |            [KCL Plugin Process]                |
-     |                    |                           |
-     +--------------------+---------------------------+
-              Continuous Synchronization
+Git Repo                    Argo CD                         Kubernetes
+[Tenant Config] --> [ApplicationSet Generator] --> [Tenant Resources]
+     |                         |                         |
+     |                    KCL Plugin                    |
+     |                   Transforms &                   |
+     └------------------Validates---------------------->|
 ```
 
 Key component interactions:
-1. ApplicationSet monitors the Git repository for tenant configurations
-2. When a new tenant configuration is detected, ApplicationSet creates an Argo CD Application
-3. The KCL plugin processes the tenant configuration file
-4. KCL generates Kubernetes manifests for namespaces, RBAC, and resource quotas
-5. Argo CD applies the generated manifests to the cluster
-6. Changes to tenant configurations trigger automatic synchronization
-7. Resource states are continuously monitored and reconciled
+1. ApplicationSet monitors the Git repository for tenant configuration changes
+2. When changes are detected, the KCL plugin processes the tenant configuration
+3. The plugin generates Kubernetes manifests based on tenant specifications
+4. Argo CD applies the generated manifests to the cluster
+5. Resources are created/updated in the appropriate tenant namespaces
+6. IAM roles and permissions are configured for tenant access
+7. Resource quotas and limits are enforced per tenant specification
 
 ## Infrastructure
 
 ![Infrastructure diagram](./docs/infra.svg)
 
-```mermaid
-graph TD
-    A[Argo CD ApplicationSet<br/>ProdTenantGenerator] --> B[Team-A Application]
-    B --> C[Namespaces]
-    C --> D[apps namespace]
-    C --> E[tools namespace]
-    
-    B --> F[Applications]
-    F --> G[Guestbook App]
-    F --> H[Backend App]
-    
-    B --> I[Resource Controls]
-    I --> J[Resource Quota<br/>CPU: 4<br/>Memory: 8Gi<br/>Pods: 20]
-    I --> K[Limit Range<br/>Default CPU: 500m<br/>Default Memory: 512Mi]
-    
-    B --> L[Access Control]
-    L --> M[IAM Role<br/>team-a-admin]
-    L --> N[RBAC<br/>apps-admin group]
-    
-    G --> O[Guestbook Deployment<br/>namespace: apps]
-    H --> P[Backend Deployment<br/>namespace: apps]
-    
-    M --> Q[AWS IAM]
-    N --> R[Kubernetes RBAC]
-```
-
 ### Argo CD Resources
+- **AppProject**: `tenants-prod` (namespace: argocd)
+  - Manages production tenant resources
+  - Allows deployment to all namespaces
+  - Whitelists all cluster resources
+
 - **ApplicationSet**: `ProdTenantGenerator` (namespace: argocd)
   - Generates tenant applications from Git repository
   - Uses KCL plugin for manifest generation
-  - Enables automated sync and pruning
+  - Implements automated sync policy
 
 ### Kubernetes Resources
 - **ConfigMap**: `kcl-plugin-config` (namespace: argocd)
   - Configures KCL plugin integration
   - Defines manifest generation commands
-
-### Project Resources
-- **AppProject**: `tenants-prod` (namespace: argocd)
-  - Controls resource access and deployment destinations
-  - Manages source repository permissions
-  - Configures cluster resource access
+  - Sets environment variable handling
