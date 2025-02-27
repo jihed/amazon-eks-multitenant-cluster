@@ -1,68 +1,64 @@
-# Kubernetes Multi-Tenant Configuration Management System
+# Multi-Tenant Kubernetes Cluster Management with Argo CD and KCL
 
-This project provides a robust multi-tenant configuration management system for Kubernetes clusters that enables teams to define and manage their namespace resources, access controls, and resource quotas through declarative YAML configurations.
+This project provides an automated multi-tenant management system for Kubernetes clusters using Argo CD and KCL (Kube Conformity Language). It enables organizations to efficiently manage multiple tenant workloads with strict isolation, resource quotas, and fine-grained access controls in a GitOps-driven workflow.
 
-The system implements a tenant-based architecture that separates different teams' resources and permissions while enforcing consistent resource limits and security policies. It automatically generates the necessary Kubernetes resources including namespaces, resource quotas, limit ranges, network policies, and RBAC configurations based on tenant-specific input files. This approach ensures proper resource isolation, secure access controls, and efficient resource utilization across all tenant workloads.
-
-## Data Flow
-The system processes tenant configurations to generate Kubernetes resources through a structured pipeline that enforces security and resource constraints.
-
-```ascii
-Input YAML                 KCL Processing              Output Resources
-[team-x/input.yaml] --> [Resource Generation] --> [Namespaces]
-                                              --> [Resource Quotas]
-                                              --> [Limit Ranges]
-                                              --> [Network Policies]
-                                              --> [RBAC Configs]
-```
-
-Key component interactions:
-1. Input YAML files define tenant configurations and requirements
-2. KCL processes the input files and generates standardized Kubernetes resources
-3. Network policies enforce isolation between tenant namespaces
-4. RBAC configurations manage access through IAM role integration
-5. Resource quotas and limit ranges ensure fair resource allocation
-6. Generated resources are applied to the Kubernetes cluster
-7. Tenant workloads are deployed within their designated namespaces
+The system implements a hierarchical tenant management structure where each tenant gets dedicated namespaces with predefined resource limits and access controls. It leverages Argo CD's ApplicationSet feature to automatically deploy and manage tenant configurations, while using KCL as a powerful abstraction layer for generating Kubernetes manifests. The solution supports multiple teams with different access levels, resource quotas, and automated application deployments, making it ideal for organizations requiring strong multi-tenancy capabilities in their Kubernetes environments.
 
 ## Repository Structure
 ```
-clusters/
-└── production/
-    └── tenants/
-        └── config/
-            ├── kcl.mod.lock          # Lock file for KCL dependencies
-            ├── outputs.yaml          # Generated Kubernetes resources for all tenants
-            ├── team-a/              
-            │   └── input.yaml        # Team A's tenant configuration including apps and access controls
-            └── team-b/
-                └── input.yaml        # Team B's tenant configuration including access controls
+.
+├── bootstrap/
+│   └── kcl-argocd-plugin.yaml     # Argo CD plugin configuration for KCL manifest generation
+├── clusters/
+│   └── production/                 # Production environment configurations
+│       ├── applicationset.yaml     # Defines automatic tenant application deployment rules
+│       ├── project.yaml           # Argo CD project configuration for production tenants
+│       └── tenants/
+│           └── config/            # Tenant-specific configurations
+│               ├── team-a/        # Team A tenant configuration
+│               │   └── input.yaml # Team A specific settings and applications
+│               └── team-b/        # Team B tenant configuration
+│                   └── input.yaml # Team B specific settings and applications
 ```
 
 ## Usage Instructions
+
 ### Prerequisites
-- Kubernetes cluster with RBAC enabled
-- kubectl CLI tool installed and configured
-- Access to AWS IAM (for IAM role integration)
-- KCL toolchain installed
+
+- Kubernetes cluster with Argo CD installed
+- KCL CLI tool installed
+- Access to AWS IAM (for role-based access control)
+- Git repository access
 
 ### Installation
+
 1. Clone the repository:
 ```bash
-git clone <repository-url>
-cd <repository-name>
+git clone https://github.com/jihed/amazon-eks-multitenant-cluster.git
+cd amazon-eks-multitenant-cluster
 ```
 
-2. Apply the tenant configurations:
+2. Install the KCL plugin for Argo CD:
 ```bash
-kubectl apply -f clusters/production/tenants/config/outputs.yaml
+kubectl apply -f bootstrap/kcl-argocd-plugin.yaml
+```
+
+3. Create the Argo CD project:
+```bash
+kubectl apply -f clusters/production/project.yaml
+```
+
+4. Deploy the ApplicationSet:
+```bash
+kubectl apply -f clusters/production/applicationset.yaml
 ```
 
 ### Quick Start
+
 1. Create a new tenant configuration:
 ```yaml
-# clusters/production/tenants/config/team-new/input.yaml
-name: team-new
+# clusters/production/tenants/config/new-team/input.yaml
+name: new-team
 env: prod
 namespaces:
   - apps
@@ -73,46 +69,20 @@ accessControl:
       type: admin
       namespacePattern: "apps"
       iamRoles:
-        - roleArn: "arn:aws:iam::123456789012:role/team-new-admin"
+        - roleArn: "arn:aws:iam::123456789012:role/new-team-admin"
           username: "admin-user"
+```
+
+2. Commit and push the configuration to trigger automatic deployment.
+
+### More Detailed Examples
+
+#### Configuring Resource Quotas
+```yaml
 resourceQuota:
   cpu: "4"
   memory: "8Gi"
   pods: "20"
-```
-
-2. Generate the Kubernetes resources:
-```bash
-kcl run clusters/production/tenants/config
-```
-
-3. Apply the generated configuration:
-```bash
-kubectl apply -f clusters/production/tenants/config/outputs.yaml
-```
-
-## Application Onboarding
-To onboard applications using the tenant configuration system, follow these steps:
-
-1. Create or update your team's input.yaml file with the application definitions:
-```yaml
-# clusters/production/tenants/config/team-a/input.yaml
-applications:
-  - name: frontend
-    gitRepo:
-      url: https://github.com/team-a/frontend
-      path: k8s/overlays/prod    # Path to Kubernetes manifests
-      branch: main              # Target branch for deployments
-      targetNamespace: apps     # Namespace where app will be deployed
-  - name: backend
-    gitRepo:
-      url: https://github.com/team-a/backend
-      path: k8s/overlays/prod
-      targetNamespace: apps
-```
-
-2. Configure application resource constraints:
-```yaml
 limitRange:
   default:
     cpu: "500m"
@@ -125,32 +95,7 @@ limitRange:
     memory: "2Gi"
 ```
 
-3. Set up access controls for application management:
-```yaml
-accessControl:
-  groups:
-    - name: apps-admin
-      type: admin
-      namespacePattern: "apps"
-      iamRoles:
-        - roleArn: "arn:aws:iam::123456789012:role/team-a-admin"
-          username: "admin-user"
-```
-
-4. Apply the configuration:
-```bash
-kcl run clusters/production/tenants/config
-kubectl apply -f clusters/production/tenants/config/outputs.yaml
-```
-
-5. Verify application deployment:
-```bash
-kubectl get applications -n <team>-prod-apps
-kubectl get pods -n <team>-prod-apps
-```
-
-### More Detailed Examples
-#### Configuring Applications
+#### Setting Up Application Deployments
 ```yaml
 applications:
   - name: frontend
@@ -159,67 +104,62 @@ applications:
       path: k8s/overlays/prod
       branch: main
       targetNamespace: apps
-  - name: backend
-    gitRepo:
-      url: https://github.com/team-a/backend
-      path: k8s/overlays/prod
-      targetNamespace: apps
-```
-
-#### Setting Resource Limits
-```yaml
-limitRange:
-  default:
-    cpu: "500m"
-    memory: "512Mi"
-  defaultRequest:
-    cpu: "100m"
-    memory: "128Mi"
-  max:
-    cpu: "2"
-    memory: "2Gi"
 ```
 
 ### Troubleshooting
+
 #### Common Issues
-1. **Namespace Creation Fails**
-   - Error: `Error from server (Forbidden): namespaces is forbidden`
-   - Solution: Ensure you have cluster-admin privileges
-   - Command: `kubectl auth can-i create namespace --all-namespaces`
 
-2. **Resource Quota Exceeded**
-   - Error: `Error from server (Forbidden): exceeded quota`
-   - Check current usage: `kubectl describe resourcequota -n <namespace>`
-   - Adjust limits in input.yaml if necessary
+1. ApplicationSet not creating applications
+- Check Argo CD logs:
+```bash
+kubectl logs -n argocd deployment/argocd-application-controller
+```
+- Verify Git repository access
+- Ensure correct file paths in ApplicationSet configuration
 
-#### Debugging
-- Enable verbose logging:
-  ```bash
-  kubectl get events -n <namespace> --sort-by='.lastTimestamp'
-  ```
-- View RBAC permissions:
-  ```bash
-  kubectl auth can-i --list --namespace=<namespace>
-  ```
+2. KCL Plugin Issues
+- Verify plugin installation:
+```bash
+kubectl get configmap -n argocd kcl-plugin-config
+```
+- Check plugin logs:
+```bash
+kubectl logs -n argocd deployment/argocd-repo-server
+```
+
+## Data Flow
+
+The system transforms tenant configurations into Kubernetes resources through a GitOps-driven pipeline using Argo CD and KCL.
+
+```ascii
+Git Repo                    Argo CD                     Kubernetes
+[Tenant Config] --> [ApplicationSet + KCL Plugin] --> [Namespace/RBAC/Quotas]
+     ^                         |                            |
+     |                        v                            v
+[Git Push] <---- [Status Update] <---- [Resource Status/Events]
+```
+
+Component Interactions:
+1. ApplicationSet monitors the Git repository for tenant configurations
+2. When changes are detected, ApplicationSet creates/updates Argo CD Applications
+3. KCL plugin processes tenant configurations and generates Kubernetes manifests
+4. Argo CD applies the generated manifests to the cluster
+5. Kubernetes creates/updates namespaces, RBAC, and resource quotas
+6. Status and events flow back to Argo CD for monitoring
+7. Argo CD maintains desired state and performs automatic healing
 
 ## Infrastructure
 
 ![Infrastructure diagram](./docs/infra.svg)
-### Namespaces
-- `team-a-prod-apps`: Production applications namespace for Team A
-- `team-a-prod-tools`: Tools namespace for Team A
 
-### Network Policies
-- `team-a-prod-apps-deny-all`: Default deny policy for apps namespace
-- `team-a-prod-tools-deny-all`: Default deny policy for tools namespace
-- `team-a-prod-apps-shared-services`: Allows access to shared services
-- `team-a-prod-tools-shared-services`: Allows access to shared services
+### Argo CD Resources
+- **ConfigMap**: `kcl-plugin-config` in `argocd` namespace for KCL plugin configuration
+- **ApplicationSet**: `prod-tenant-namespaces` in `argocd` namespace for tenant management
+- **AppProject**: `tenants-prod` in `argocd` namespace for production tenant isolation
 
-### RBAC
-- Role: `apps-admin-admin` with full namespace access
-- Role: `tools-developer-developer` with limited namespace access
-- RoleBindings: Mapping roles to IAM users/groups
-
-### Resource Management
-- ResourceQuota: Limits CPU (4 cores), memory (8Gi), and pods (20)
-- LimitRange: Default container limits and requests
+### Kubernetes Resources
+- **Namespaces**: Created per tenant (`apps`, `tools`)
+- **ResourceQuotas**: CPU, memory, and pod limits per tenant
+- **LimitRanges**: Default and maximum resource constraints
+- **RBAC**: Role-based access control tied to AWS IAM roles

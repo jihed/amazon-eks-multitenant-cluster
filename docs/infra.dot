@@ -1,0 +1,33 @@
+digraph INFRA {
+  node [ color = "black", fillcolor = "#E6E6E6", height =1, style = "filled,bold,rounded", fontname = "Arial" ];
+  "team-a-namespace-apps" [ label = "team-a-namespace-apps
+(Namespace)", shape =rectangle ];
+  "team-a-namespace-tools" [ label = "team-a-namespace-tools
+(Namespace)", shape =rectangle ];
+  "team-a-frontend" [ label = "team-a-frontend
+(Application)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "team-a-backend" [ label = "team-a-backend
+(Application)", shape =rectangle, fillcolor = "#B7E0FF" ];
+  "team-a-resource-quota" [ label = "team-a-resource-quota
+(ResourceQuota)", shape =rectangle ];
+  "team-a-limit-range" [ label = "team-a-limit-range
+(LimitRange)", shape =rectangle ];
+  "team-b-namespace-apps" [ label = "team-b-namespace-apps
+(Namespace)", shape =rectangle ];
+  "team-b-namespace-tools" [ label = "team-b-namespace-tools
+(Namespace)", shape =rectangle ];
+  "team-b-resource-quota" [ label = "team-b-resource-quota
+(ResourceQuota)", shape =rectangle ];
+  "team-b-limit-range" [ label = "team-b-limit-range
+(LimitRange)", shape =rectangle ];
+  "team-a-frontend" -> "team-a-namespace-apps";
+  "team-a-backend" -> "team-a-namespace-apps";
+  "team-a-resource-quota" -> "team-a-namespace-apps";
+  "team-a-resource-quota" -> "team-a-namespace-tools";
+  "team-a-limit-range" -> "team-a-namespace-apps";
+  "team-a-limit-range" -> "team-a-namespace-tools";
+  "team-b-resource-quota" -> "team-b-namespace-apps";
+  "team-b-resource-quota" -> "team-b-namespace-tools";
+  "team-b-limit-range" -> "team-b-namespace-apps";
+  "team-b-limit-range" -> "team-b-namespace-tools";
+}
