@@ -5,9 +5,9 @@ metadata:
   name: tenants-prod
   namespace: argocd
 spec:
-  description: "Production Tenant Management"
+  description: "Production Tenant Manager Project"
   sourceRepos:
-    - "https://github.com/jihed/amazon-eks-multitenant-cluster.git"
+    - "https://github.com/jihed/amazon-eks-tenant-manager.git"
   destinations:
     - namespace: '*'
       server: https://kubernetes.default.svc

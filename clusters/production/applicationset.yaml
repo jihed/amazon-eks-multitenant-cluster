@@ -17,6 +17,7 @@ spec:
       namespace: argocd
       annotations:
         debug.path: '{{path}}'
+        debug.file: '{{path.file}}'
         debug.basename: '{{path.basename}}'
       labels:
         tenant: '{{path.basename}}'
@@ -31,7 +32,7 @@ spec:
           name: kcl-v1.0
           parameters:
             - name: TENANT_FILE
-              string: "{{path.basename}}/input.yaml"
+              string: "input.yaml"
             - name: ENVIRONMENT
               string: "production"
       destination:
