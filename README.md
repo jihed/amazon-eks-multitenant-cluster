@@ -163,3 +163,54 @@ Key component interactions:
   - Configures KCL plugin integration
   - Defines manifest generation commands
   - Sets environment variable handling
+
+
+
+  graph TD
+    subgraph "ArgoCD Resources"
+        A[AppProject<br/>team-a-prod] --> |contains| AS1[ApplicationSet<br/>team-a-prod-frontend]
+        A --> |contains| AS2[ApplicationSet<br/>team-a-prod-backend]
+        A --> |contains| AS3[ApplicationSet<br/>team-a-prod-monitoring]
+    end
+
+    subgraph "Namespace: team-a-prod-apps"
+        NS1[Namespace] --> RQ1[ResourceQuota]
+        NS1 --> LR1[LimitRange]
+        NS1 --> NP1[NetworkPolicy]
+        NS1 --> R1[Role]
+        NS1 --> RB1[RoleBinding]
+    end
+
+    subgraph "Namespace: team-a-prod-tools"
+        NS2[Namespace] --> RQ2[ResourceQuota]
+        NS2 --> LR2[LimitRange]
+        NS2 --> NP2[NetworkPolicy]
+        NS2 --> R2[Role]
+        NS2 --> RB2[RoleBinding]
+    end
+
+    subgraph "Resource Details"
+        RQ1 --> |limits| Q1[CPU: 4<br/>Memory: 8Gi<br/>Pods: 20]
+        LR1 --> |contains| L1[Default/Request/Max<br/>CPU & Memory limits]
+        NP1 --> |allows| NET1[Ingress/Egress<br/>Team & Shared Services]
+        R1 --> |defines| RBAC1[Admin/Developer<br/>Permissions]
+        RB1 --> |binds to| IAM1[IAM Roles]
+    end
+
+    subgraph "ArgoCD Applications Flow"
+        AS1 --> |creates| APP1[Application<br/>frontend]
+        AS2 --> |creates| APP2[Application<br/>backend]
+        AS3 --> |creates| APP3[Application<br/>monitoring]
+        APP1 --> |deploys to| NS1
+        APP2 --> |deploys to| NS1
+        APP3 --> |deploys to| NS2
+    end
+
+    subgraph "Source Repositories"
+        GH1[github.com/team-a/frontend]
+        GH2[github.com/team-a/backend]
+        GH3[github.com/team-a/monitoring]
+        APP1 --> |syncs from| GH1
+        APP2 --> |syncs from| GH2
+        APP3 --> |syncs from| GH3
+    end
