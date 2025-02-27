@@ -1,4 +1,3 @@
-# bootstrap/kcl-plugin-config.yaml
 apiVersion: v1
 kind: ConfigMap
 metadata:
@@ -13,5 +12,16 @@ data:
     spec:
       version: v1.0
       generate:
-        command: ["kcl"]
-        args: ["run", "-D", "TENANT_FILE=${TENANT_FILE}", "-D", "ENVIRONMENT=${ENVIRONMENT}"]
+        command: ["sh", "-c"]
+        args:
+          - |
+            # Extract parameters
+            TENANT_FILE=$(echo "$ARGOCD_APP_PARAMETERS" | grep -o '"TENANT_FILE","string":"[^"]*"' | sed 's/"TENANT_FILE","string":"\(.*\)"/\1/')
+            ENVIRONMENT=$(echo "$ARGOCD_APP_PARAMETERS" | grep -o '"ENVIRONMENT","string":"[^"]*"' | sed 's/"ENVIRONMENT","string":"\(.*\)"/\1/')
+
+            # Run KCL and filter only the YAML output
+            kcl run \
+              -D TENANT_FILE="${TENANT_FILE}" \
+              -D ENVIRONMENT="${ENVIRONMENT}" \
+              main.k 2>/dev/null | \
+              sed -n '/^apiVersion: v1/,$p'
