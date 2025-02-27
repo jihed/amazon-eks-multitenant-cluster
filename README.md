@@ -1,10 +1,27 @@
-# Amazon EKS Tenant Manager: Multi-Tenant Kubernetes Management with KCL and ArgoCD
+```markdown
+# Amazon EKS Tenant Manager
 
-The Amazon EKS Tenant Manager is a GitOps-based solution that automates the management of multiple tenants in Amazon EKS clusters using Argo CD. It provides a declarative approach to tenant configuration, resource management, and access control, enabling teams to efficiently manage their Kubernetes resources while maintaining isolation and security.
+## Motivation
+Managing multiple tenants in a Kubernetes environment can be complex and challenging, especially when dealing with:
+- Resource isolation and quota management
+- Access control and security
+- Configuration consistency
+- Operational overhead
+- Compliance and governance
 
-This project implements a multi-tenant architecture that automatically provisions and manages tenant namespaces, resource quotas, and access controls through GitOps practices. It leverages Argo CD's ApplicationSet controller and KCL (Kube Conformity Language) plugin to generate and maintain Kubernetes manifests based on tenant-specific configurations. The solution supports fine-grained access control through IAM role integration, resource quotas enforcement, and automated application deployment across tenant spaces.
+This solution addresses these challenges by providing a GitOps-based approach to automate and standardize tenant management in Amazon EKS clusters.
 
-## Architecture Overview
+## Introduction
+The Amazon EKS Tenant Manager is a GitOps-based solution that leverages Argo CD and KCL (Kubernetes Configuration Language) to automate the management of multiple tenants in Amazon EKS clusters. It provides:
+
+- **Declarative Tenant Management**: Define tenant configurations as code
+- **Automated Resource Provisioning**: Automatically create and manage tenant resources
+- **Standardized Access Control**: Implement consistent RBAC and security policies
+- **Resource Quotas**: Enforce resource limits per tenant
+- **GitOps Workflow**: Maintain desired state through Git
+- **Multi-Environment Support**: Support for different environments (dev, staging, prod)
+
+## Architecture
 
 ```mermaid
 flowchart LR
@@ -22,170 +39,41 @@ flowchart LR
     end
 ```
 
-## Tenant Deployment Process
+## Implementation Guide
 
-```mermaid
-flowchart TD
-    Input[Tenant YAML] --> KCL[KCL Processor]
-    KCL --> Resources[Generate Resources]
-    Resources --> Deploy[Deploy to EKS]
-    
-    subgraph Resources
-        NS[Namespaces]
-        RQ[Resource Quotas]
-        NP[Network Policies]
-        RBAC[RBAC Rules]
-    end
-    
-    subgraph ArgoCD
-        AP[ArgoCD Project]
-        AS[ApplicationSets]
-    end
+### Prerequisites
+- Amazon EKS cluster
+- Argo CD (version 2.4+)
+- KCL (version 0.11.1)
+- kubectl configured with cluster access
+- Git repository for storing configurations
+
+### Installation Steps
+
+1. **Install Argo CD**
+```bash
+kubectl create namespace argocd
+kubectl apply -n argocd -f https://raw.githubusercontent.com/argoproj/argo-cd/stable/manifests/install.yaml
 ```
 
-## Plugin Configuration Flow
+2. **Configure KCL Plugin**
+Create a ConfigMap for the KCL plugin:
 
-```mermaid
-flowchart LR
-    CM[ConfigMap<br>KCL Plugin] --> RS[Repo Server]
-    IC[Init Container<br>KCL v0.11.1] --> RS
-    RS --> Process[Process KCL Files]
-    Process --> K8S[Generate K8s Resources]
+```bash
+kubectl apply -f bootstrap/kcl-argocd-plugin.yaml
 ```
 
-## Resource Generation Flow
+3. **Patch Argo CD Repo Server**
+```bash
+# Apply the patch
+kubectl -n argocd patch deploy/argocd-repo-server -p "$(cat bootstrap/patch-argocd-repo-server.yaml)"
 
-```mermaid
-flowchart TD
-    Input[input.yaml] --> KCL[KCL v0.11.1]
-    KCL --> Validate[Validate Schema]
-    Validate --> Generate[Generate Resources]
-    Generate --> Apply[Apply to Cluster]
-    
-    subgraph Resources
-        direction LR
-        NS[Namespaces]
-        Quotas[Resource Quotas]
-        Policies[Network Policies]
-        RBAC[RBAC Rules]
-        Argo[ArgoCD Resources]
-    end
+# Verify the patch
+kubectl -n argocd get pods -l app.kubernetes.io/name=argocd-repo-server
 ```
 
-## Project Structure
-```
-.
-├── base/                  # Core KCL configurations
-│   ├── schema.k          # Resource schemas
-│   ├── config.k          # Configuration loader
-│   ├── common.k          # Common utilities
-│   └── argo_schema.k     # ArgoCD schemas
-├── resources/            # Resource generators
-│   ├── namespace.k       # Namespace configuration
-│   ├── quota.k          # Resource quotas
-│   ├── limits.k         # Limit ranges
-│   ├── network.k        # Network policies
-│   ├── rbac.k           # RBAC rules
-│   ├── applicationset.k  # ArgoCD ApplicationSets
-│   └── argocd_project.k # ArgoCD Projects
-├── bootstrap/           # Setup configurations
-│   ├── kcl-plugin-config.yaml    # KCL plugin configuration
-│   └── repo-server-patch.yaml    # ArgoCD repo server patch
-└── tenants/             # Tenant configurations
-    └── team-a/
-        └── input.yaml   # Tenant definition
-```
-
-## Installation Steps
-
-### 1. KCL Plugin Configuration
-
-```mermaid
-flowchart TD
-    Config[Create Plugin ConfigMap] --> Apply[Apply to Cluster]
-    Apply --> Patch[Patch Repo Server]
-    Patch --> Verify[Verify Installation]
-```
-
-```yaml
-# bootstrap/kcl-plugin-config.yaml
-apiVersion: v1
-kind: ConfigMap
-metadata:
-  name: kcl-plugin
-  namespace: argocd
-data:
-  plugin.yaml: |
-    apiVersion: argoproj.io/v1alpha1
-    kind: ConfigManagementPlugin
-    metadata:
-      name: kcl
-    spec:
-      version: v1.0
-      generate:
-        command: ["sh", "-c"]
-        args: ["kcl run -o yaml -D TENANT_FILE=$ARGOCD_APP_SOURCE_PATH/input.yaml"]
-```
-
-### 2. Repo Server Configuration
-
-```yaml
-# bootstrap/repo-server-patch.yaml
-apiVersion: apps/v1
-kind: Deployment
-metadata:
-  name: argocd-repo-server
-  namespace: argocd
-spec:
-  template:
-    spec:
-      initContainers:
-        - name: kcl-install
-          image: alpine:3.15
-          command: [sh, -c]
-          args:
-            - |
-              wget -O /tmp/kcl.tar.gz https://github.com/kcl-lang/kcl/releases/download/v0.11.1/kclvm-v0.11.1-linux-amd64.tar.gz &&
-              tar -xf /tmp/kcl.tar.gz -C /tmp &&
-              mv /tmp/kclvm-v0.11.1-linux-amd64/bin/kcl /custom-tools/ &&
-              chmod +x /custom-tools/kcl
-          volumeMounts:
-            - mountPath: /custom-tools
-              name: custom-tools
-      containers:
-        - name: argocd-repo-server
-          volumeMounts:
-            - mountPath: /usr/local/bin/kcl
-              name: custom-tools
-              subPath: kcl
-            - mountPath: /home/argocd/cmp-server/config/plugin.yaml
-              name: kcl-plugin
-              subPath: plugin.yaml
-      volumes:
-        - name: custom-tools
-          emptyDir: {}
-        - name: kcl-plugin
-          configMap:
-            name: kcl-plugin
-```
-
-## Application Deployment Flow
-
-```mermaid
-flowchart LR
-    Git[Git Repository] --> ArgoCD[ArgoCD]
-    ArgoCD --> KCL[KCL Plugin]
-    KCL --> Resources[Generate Resources]
-    Resources --> Apply[Apply to Cluster]
-    
-    subgraph Cluster
-        NS[Namespaces]
-        Apps[Applications]
-        Config[Configurations]
-    end
-```
-
-## Tenant Configuration Example
+4. **Create Tenant Configuration**
+Create a tenant configuration file `clusters/dev/tenants/team-a/input.yaml`:
 
 ```yaml
 name: team-a
@@ -194,11 +82,16 @@ namespaces:
   - apps
   - tools
 applications:
-  - name: frontend
+  - name: guestbook
     gitRepo:
-      url: https://github.com/team-a/frontend
+      url: https://github.com/argoproj/argocd-example-apps/
+      path: guestbook
+      branch: HEAD
+      targetNamespace: apps
+  - name: backend
+    gitRepo:
+      url: https://github.com/team-a/backend
       path: k8s/overlays/prod
-      branch: main
       targetNamespace: apps
 accessControl:
   groups:
@@ -212,58 +105,127 @@ resourceQuota:
   cpu: "4"
   memory: "8Gi"
   pods: "20"
+limitRange:
+  default:
+    cpu: "500m"
+    memory: "512Mi"
+  defaultRequest:
+    cpu: "100m"
+    memory: "128Mi"
+  max:
+    cpu: "2"
+    memory: "2Gi"
 ```
 
-## Troubleshooting
+## Application Onboarding Sequence
 
 ```mermaid
-flowchart TD
-    Issue[Issue Detected] --> Check[Check Components]
-    Check --> Plugin[Plugin Status]
-    Check --> Logs[ArgoCD Logs]
-    Check --> Resources[K8s Resources]
+sequenceDiagram
+    participant Dev as Developer
+    participant Git as Git Repository
+    participant Argo as Argo CD
+    participant KCL as KCL Plugin
+    participant K8s as Kubernetes
+
+    Dev->>Git: Push tenant configuration
+    Git->>Argo: Webhook trigger
+    Argo->>KCL: Process configuration
+    KCL->>Argo: Generate K8s manifests
+    Argo->>K8s: Apply resources
+    K8s-->>Argo: Resource status
+    Argo-->>Git: Update status
     
-    Plugin --> PluginFix[Fix Plugin]
-    Logs --> LogFix[Address Errors]
-    Resources --> ResFix[Fix Resources]
+    Note over Dev,K8s: Tenant resources created
+    
+    Dev->>Git: Push application code
+    Git->>Argo: Webhook trigger
+    Argo->>K8s: Deploy application
+    K8s-->>Argo: Deployment status
 ```
 
-### Common Issues
-1. Plugin Installation
-```bash
-kubectl get configmap kcl-plugin -n argocd
-kubectl get pods -n argocd -l app.kubernetes.io/name=argocd-repo-server
-```
+## Verification Steps
 
-2. Resource Generation
 ```bash
-kcl run -D TENANT_FILE=tenants/team-a/input.yaml
-```
+# Check namespace creation
+kubectl get ns apps tools
 
-3. Application Sync
-```bash
+# Check resource quotas
+kubectl describe resourcequota -n apps
+
+# Check limit ranges
+kubectl describe limitrange -n apps
+
+# Check Argo CD applications
 argocd app list
-argocd app sync <app-name>
+
+# Check RBAC configuration
+kubectl get rolebindings -n apps
+
+# Check plugin installation
+kubectl -n argocd get configmap kcl-plugin
+kubectl -n argocd get pods -l app.kubernetes.io/name=argocd-repo-server
 ```
+
+## Project Structure
+```
+.
+├── bootstrap                    # Bootstrap configurations
+│   ├── kcl-argocd-plugin.yaml  # KCL plugin configuration for Argo CD
+│   └── patch-argocd-repo-server.yaml # Repo server patch configuration
+├── clusters                     # Multi-environment cluster configurations
+│   ├── prod                     # Production environment
+│   │   ├── applicationset.yaml # ApplicationSet configuration
+│   │   ├── config             # KCL configurations
+│   │   │   ├── base          # Base KCL schemas and configurations
+│   │   │   │   ├── argocd_schema.k
+│   │   │   │   ├── common.k
+│   │   │   │   ├── config.k
+│   │   │   │   └── schema.k
+│   │   │   ├── kcl.mod       # KCL module definition
+│   │   │   ├── kcl.mod.lock  # KCL module lock file
+│   │   │   ├── main.k        # Main KCL entry point
+│   │   │   └── resources     # Resource generators
+│   │   │       ├── applicationset.k
+│   │   │       ├── argocd_project.k
+│   │   │       ├── limits.k
+│   │   │       ├── namespace.k
+│   │   │       ├── network.k
+│   │   │       ├── quota.k
+│   │   │       └── rbac.k
+│   │   ├── project.yaml      # Argo CD project configuration
+│   │   └── tenants          # Tenant-specific configurations
+│   │       ├── team-a
+│   │       │   └── input.yaml
+│   │       └── team-b
+│   │           └── input.yaml
+│   ├── dev            # dev environment
+│   └── staging              # Staging environment
+└── README.md
+```
+
+Key components:
+- **bootstrap/**: Contains initial setup configurations for Argo CD and KCL plugin
+- **clusters/**: Multi-environment cluster configurations
+  - **dev/**, **staging/**, **production/**: Environment-specific configurations
+    - **config/**: KCL configurations and resource generators
+    - **tenants/**: Tenant-specific configurations
+    - **applicationset.yaml**: ApplicationSet definitions
+    - **project.yaml**: Argo CD project configurations
+
+Each environment follows the same structure, allowing for consistent yet customizable configurations across different stages of deployment.
 
 ## Features
-- ✅ KCL v0.11.1 compatibility
 - ✅ Automated tenant provisioning
 - ✅ Resource quota management
 - ✅ Network isolation
 - ✅ IAM integration
 - ✅ GitOps workflow
 - ✅ Multi-environment support
-
-## Prerequisites
-- Amazon EKS cluster
-- ArgoCD installed
-- KCL version 0.11.1
-- kubectl configured
-- Git repository access
+- ✅ KCL v0.11.1 compatibility
 
 ## Contributing
-Contributions are welcome! Please ensure you're using KCL v0.11.1 for compatibility.
+Contributions are welcome! Please read our contributing guidelines first.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
+```
