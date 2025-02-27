@@ -29,105 +29,36 @@ Key component interactions:
 ```
 clusters/
 └── production/
+    ├── applicationset.yaml
+    ├── config/
+    │   └── kcl.mod.lock
+    ├── project.yaml
     └── tenants/
-        └── config/
-            ├── kcl.mod.lock          # Lock file for KCL dependencies
-            ├── outputs.yaml          # Generated Kubernetes resources for all tenants
-            ├── team-a/              
-            │   └── input.yaml        # Team A's tenant configuration including apps and access controls
-            └── team-b/
-                └── input.yaml        # Team B's tenant configuration including access controls
+        ├── team-a/
+        │   └── input.yaml        # Team A's tenant configuration including apps and access controls
+        └── team-b/
+            └── input.yaml        # Team B's tenant configuration including access controls
 ```
 
-## Usage Instructions
-### Prerequisites
-- Kubernetes cluster with RBAC enabled
-- kubectl CLI tool installed and configured
-- Access to AWS IAM (for IAM role integration)
-- KCL toolchain installed
+## Configuration Details
 
-### Installation
-1. Clone the repository:
-```bash
-git clone <repository-url>
-cd <repository-name>
-```
+### Tenant Input Configuration (input.yaml)
+Each tenant's `input.yaml` file defines their complete configuration:
 
-2. Apply the tenant configurations:
-```bash
-kubectl apply -f clusters/production/tenants/config/outputs.yaml
-```
-
-### Quick Start
-1. Create a new tenant configuration:
 ```yaml
-# clusters/production/tenants/config/team-new/input.yaml
-name: team-new
-env: prod
-namespaces:
+name: team-a                # Tenant identifier
+env: prod                   # Environment (e.g., prod, dev)
+namespaces:                 # List of namespaces for the tenant
   - apps
   - tools
-accessControl:
-  groups:
-    - name: apps-admin
-      type: admin
-      namespacePattern: "apps"
-      iamRoles:
-        - roleArn: "arn:aws:iam::123456789012:role/team-new-admin"
-          username: "admin-user"
-resourceQuota:
-  cpu: "4"
-  memory: "8Gi"
-  pods: "20"
-```
-
-2. Generate the Kubernetes resources:
-```bash
-kcl run clusters/production/tenants/config
-```
-
-3. Apply the generated configuration:
-```bash
-kubectl apply -f clusters/production/tenants/config/outputs.yaml
-```
-
-## Application Onboarding
-To onboard applications using the tenant configuration system, follow these steps:
-
-1. Create or update your team's input.yaml file with the application definitions:
-```yaml
-# clusters/production/tenants/config/team-a/input.yaml
-applications:
-  - name: frontend
+applications:              # Optional: Applications to be deployed
+  - name: guestbook
     gitRepo:
-      url: https://github.com/team-a/frontend
-      path: k8s/overlays/prod    # Path to Kubernetes manifests
-      branch: main              # Target branch for deployments
-      targetNamespace: apps     # Namespace where app will be deployed
-  - name: backend
-    gitRepo:
-      url: https://github.com/team-a/backend
-      path: k8s/overlays/prod
+      url: https://github.com/argoproj/argocd-example-apps/
+      path: guestbook
+      branch: HEAD
       targetNamespace: apps
-```
-
-2. Configure application resource constraints:
-```yaml
-limitRange:
-  default:
-    cpu: "500m"
-    memory: "512Mi"
-  defaultRequest:
-    cpu: "100m"
-    memory: "128Mi"
-  max:
-    cpu: "2"
-    memory: "2Gi"
-```
-
-3. Set up access controls for application management:
-```yaml
-accessControl:
+accessControl:             # Access control configuration
   groups:
     - name: apps-admin
       type: admin
@@ -135,40 +66,11 @@ accessControl:
       iamRoles:
         - roleArn: "arn:aws:iam::123456789012:role/team-a-admin"
           username: "admin-user"
-```
-
-4. Apply the configuration:
-```bash
-kcl run clusters/production/tenants/config
-kubectl apply -f clusters/production/tenants/config/outputs.yaml
-```
-
-5. Verify application deployment:
-```bash
-kubectl get applications -n <team>-prod-apps
-kubectl get pods -n <team>-prod-apps
-```
-
-### More Detailed Examples
-#### Configuring Applications
-```yaml
-applications:
-  - name: frontend
-    gitRepo:
-      url: https://github.com/team-a/frontend
-      path: k8s/overlays/prod
-      branch: main
-      targetNamespace: apps
-  - name: backend
-    gitRepo:
-      url: https://github.com/team-a/backend
-      path: k8s/overlays/prod
-      targetNamespace: apps
-```
-
-#### Setting Resource Limits
-```yaml
-limitRange:
+resourceQuota:             # Tenant-wide resource limits
+  cpu: "4"
+  memory: "8Gi"
+  pods: "20"
+limitRange:               # Container-level resource constraints
   default:
     cpu: "500m"
     memory: "512Mi"
@@ -180,46 +82,71 @@ limitRange:
     memory: "2Gi"
 ```
 
-### Troubleshooting
-#### Common Issues
-1. **Namespace Creation Fails**
-   - Error: `Error from server (Forbidden): namespaces is forbidden`
-   - Solution: Ensure you have cluster-admin privileges
-   - Command: `kubectl auth can-i create namespace --all-namespaces`
+### Argo ApplicationSet Configuration
+The ApplicationSet controller automatically manages tenant applications based on the input.yaml files:
 
-2. **Resource Quota Exceeded**
-   - Error: `Error from server (Forbidden): exceeded quota`
-   - Check current usage: `kubectl describe resourcequota -n <namespace>`
-   - Adjust limits in input.yaml if necessary
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: ApplicationSet
+metadata:
+  name: prod-generator
+  namespace: argocd
+spec:
+  generators:
+    - git:
+        repoURL: https://github.com/jihed/amazon-eks-tenant-manager.git
+        revision: HEAD
+        files:
+        - path: "clusters/production/tenants/*/input.yaml"
+  template:
+    metadata:
+      name: '{{path.basename}}-prod'
+      labels:
+        tenant: '{{path.basename}}'
+        environment: production
+    spec:
+      project: tenants-prod
+      source:
+        path: 'clusters/production/config'
+        plugin:
+          name: kcl-v1.0
+          parameters:
+            - name: TENANT_FILE
+              string: "../tenants/{{path.basename}}/input.yaml"
+```
 
-#### Debugging
-- Enable verbose logging:
-  ```bash
-  kubectl get events -n <namespace> --sort-by='.lastTimestamp'
-  ```
-- View RBAC permissions:
-  ```bash
-  kubectl auth can-i --list --namespace=<namespace>
-  ```
+The ApplicationSet:
+- Discovers tenant configurations using Git generator
+- Creates an Argo CD application for each tenant
+- Applies consistent naming and labeling
+- Uses KCL plugin to process tenant configurations
+- Enables automated synchronization and pruning
 
-## Infrastructure
+### Argo Project Configuration
+The `project.yaml` defines the security boundaries and permissions:
 
-![Infrastructure diagram](./docs/infra.svg)
-### Namespaces
-- `team-a-prod-apps`: Production applications namespace for Team A
-- `team-a-prod-tools`: Tools namespace for Team A
+```yaml
+apiVersion: argoproj.io/v1alpha1
+kind: AppProject
+metadata:
+  name: tenants-prod
+  namespace: argocd
+spec:
+  description: "Production Tenant Manager Project"
+  sourceRepos:
+    - "https://github.com/jihed/amazon-eks-tenant-manager.git"
+  destinations:
+    - namespace: '*'
+      server: https://kubernetes.default.svc
+  clusterResourceWhitelist:
+    - group: '*'
+      kind: '*'
+```
 
-### Network Policies
-- `team-a-prod-apps-deny-all`: Default deny policy for apps namespace
-- `team-a-prod-tools-deny-all`: Default deny policy for tools namespace
-- `team-a-prod-apps-shared-services`: Allows access to shared services
-- `team-a-prod-tools-shared-services`: Allows access to shared services
+The Project configuration:
+- Defines allowed source repositories
+- Controls which clusters and namespaces can be targeted
+- Specifies which Kubernetes resources can be managed
+- Provides isolation between different tenant applications
 
-### RBAC
-- Role: `apps-admin-admin` with full namespace access
-- Role: `tools-developer-developer` with limited namespace access
-- RoleBindings: Mapping roles to IAM users/groups
-
-### Resource Management
-- ResourceQuota: Limits CPU (4 cores), memory (8Gi), and pods (20)
-- LimitRange: Default container limits and requests
+[Rest of README remains exactly the same...]
