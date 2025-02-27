@@ -1,15 +1,32 @@
-# clusters/production/tenants/config/tenants/team-a.yaml
 name: team-a
-namespaces: 
-  - team-a-ns1
-  - team-a-ns2
+env: prod
+namespaces:
+  - apps
+  - tools
+applications:
+  - name: frontend
+    gitRepo:
+      url: https://github.com/team-a/frontend
+      path: k8s/overlays/prod
+      branch: main
+      targetNamespace: apps
+  - name: backend
+    gitRepo:
+      url: https://github.com/team-a/backend
+      path: k8s/overlays/prod
+      targetNamespace: apps
+accessControl:
+  groups:
+    - name: apps-admin
+      type: admin
+      namespacePattern: "apps"
+      iamRoles:
+        - roleArn: "arn:aws:iam::123456789012:role/team-a-admin"
+          username: "admin-user"
 resourceQuota:
   cpu: "4"
   memory: "8Gi"
   pods: "20"
-  services: "10"
-  configmaps: "20"
-  secrets: "20"
 limitRange:
   default:
     cpu: "500m"

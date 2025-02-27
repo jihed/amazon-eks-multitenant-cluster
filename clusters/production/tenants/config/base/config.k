@@ -1,26 +1,28 @@
-# clusters/production/tenants/config/base/config.k
 import yaml
 import file
 import base.schema as s
 
-# Get specific tenant file and environment from env vars
 tenant_file = option("TENANT_FILE") or ""
-environment = option("ENVIRONMENT") or ""
 
-# if not tenant_file:
-#     assert "TENANT_FILE environment variable is required"
-# if not environment:
-#     assert "ENVIRONMENT environment variable is required"
+if not tenant_file:
+    assert "TENANT_FILE environment variable is required"
 
-print("Processing tenant file:", tenant_file)
-print("Environment:", environment)
+print("Processing tenant file: ${tenant_file}")
 
-# Read and validate single tenant
 tenant_data = yaml.decode(file.read(tenant_file))
+
+# Validate tenant data structure
+assert tenant_data, "Empty tenant configuration"
+assert tenant_data.name, "Tenant name is required"
+assert tenant_data.env, "Tenant environment is required"
+assert tenant_data.namespaces, "Tenant namespaces are required"
+
+# Create tenant with validation
 tenant = s.Tenant {
-    name = tenant_data.name
-    env = environment  # Use environment from ApplicationSet
-    namespaces = tenant_data.namespaces
+    name = str(tenant_data.name)
+    env = str(tenant_data.env)
+    prefix = "${tenant_data.name}-${tenant_data.env}"
+    namespaces = [str(ns) for ns in tenant_data.namespaces]
     resourceQuota = s.ResourceQuota {
         cpu = tenant_data?.resourceQuota?.cpu
         memory = tenant_data?.resourceQuota?.memory
@@ -43,4 +45,26 @@ tenant = s.Tenant {
             memory = tenant_data?.limitRange?.max?.memory
         }
     }
+    accessControl = s.AccessControl {
+        groups = [s.AccessGroup {
+            name = group.name
+            type = group.type
+            namespacePattern = group.namespacePattern
+            iamRoles = [s.IamRole {
+                roleArn = role.roleArn
+                username = role.username
+            } for role in group.iamRoles]
+        } for group in tenant_data.accessControl.groups]
+    }
+    # Add applications if they exist in the input
+    if tenant_data.applications:
+        applications = [s.Application {
+            name = app.name
+            gitRepo = s.GitRepo {
+                url = app.gitRepo.url
+                path = app.gitRepo.path
+                branch = app.gitRepo?.branch or "main"
+                targetNamespace = app.gitRepo.targetNamespace
+            }
+        } for app in tenant_data.applications]
 }

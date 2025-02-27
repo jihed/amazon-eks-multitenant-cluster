@@ -1,4 +1,4 @@
-# clusters/production/tenants/config/base/schema.k
+
 schema ResourceQuota:
     cpu?: str = "4"
     memory?: str = "8Gi"
@@ -25,9 +25,35 @@ schema LimitRange:
         memory = "2Gi"
     }
 
+schema GitRepo:
+    url: str
+    path: str
+    branch?: str = "main"
+    targetNamespace: str
+
+schema Application:
+    name: str
+    gitRepo: GitRepo
+
+schema AccessGroup:
+    name: str
+    type: str
+    namespacePattern: str
+    iamRoles: [IamRole]
+
+schema IamRole:
+    roleArn: str
+    username: str
+
+schema AccessControl:
+    groups: [AccessGroup]
+
 schema Tenant:
     name: str
     env: str
+    prefix: str
     namespaces: [str]
     resourceQuota: ResourceQuota
     limitRange: LimitRange
+    accessControl: AccessControl
+    applications?: [Application]
