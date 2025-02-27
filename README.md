@@ -1,4 +1,3 @@
-```markdown
 # Amazon EKS Tenant Manager
 
 ## Motivation
@@ -228,4 +227,3 @@ Contributions are welcome! Please read our contributing guidelines first.
 
 ## License
 This project is licensed under the MIT License - see the LICENSE file for details.
-```
