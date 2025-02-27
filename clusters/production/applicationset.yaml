@@ -2,7 +2,7 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: tenant-generator-prod
+  name: prod-generator
   namespace: argocd
 spec:
   generators:
@@ -13,11 +13,10 @@ spec:
         - path: "clusters/production/tenants/*/input.yaml"
   template:
     metadata:
-      name: '{{path.basename}}-tenant-prod'
+      name: '{{path.basename}}-prod'
       namespace: argocd
       annotations:
         debug.path: '{{path}}'
-        debug.file: '{{path.file}}'
         debug.basename: '{{path.basename}}'
       labels:
         tenant: '{{path.basename}}'
@@ -32,7 +31,7 @@ spec:
           name: kcl-v1.0
           parameters:
             - name: TENANT_FILE
-              string: "input.yaml"
+              string: "../tenants/{{path.basename}}/input.yaml"
             - name: ENVIRONMENT
               string: "production"
       destination:

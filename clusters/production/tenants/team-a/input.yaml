@@ -4,11 +4,11 @@ namespaces:
   - apps
   - tools
 applications:
-  - name: frontend
+  - name: guestbook
     gitRepo:
-      url: https://github.com/team-a/frontend
-      path: k8s/overlays/prod
-      branch: main
+      url: https://github.com/argoproj/argocd-example-apps/
+      path: guestbook
+      branch: HEAD
       targetNamespace: apps
   - name: backend
     gitRepo:
