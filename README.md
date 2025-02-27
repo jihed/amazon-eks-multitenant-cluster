@@ -1,4 +1,4 @@
-# EKS Tenant Manager: Multi-Tenant Kubernetes Management with KCL and ArgoCD
+# Amazon EKS Tenant Manager: Multi-Tenant Kubernetes Management with KCL and ArgoCD
 
 The Amazon EKS Tenant Manager is a GitOps-based solution that automates the management of multiple tenants in Amazon EKS clusters using Argo CD. It provides a declarative approach to tenant configuration, resource management, and access control, enabling teams to efficiently manage their Kubernetes resources while maintaining isolation and security.
 
