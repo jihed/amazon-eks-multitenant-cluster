@@ -1,14 +1,13 @@
 import base.config as config
 import base.common as common
 
-
 # Generate ArgoCD Project only if applications are defined
 argocd_project = [] if not config.tenant?.applications else [
     {
         apiVersion = "argoproj.io/v1alpha1"
         kind = "AppProject"
         metadata = {
-            name = config.tenant.prefix
+            name = config.tenant.prefix  
             namespace = "argocd"
             labels = common.mergeLabels({
                 "team": config.tenant.name
@@ -19,9 +18,12 @@ argocd_project = [] if not config.tenant?.applications else [
             }
         }
         spec = {
-            description = "Project for ${config.tenant.name} team in ${config.tenant.env} environment"
+            description = "${config.tenant.name} team applications for ${config.tenant.env} environment"
+            # Include all application repos plus wildcard for team repos
             sourceRepos = [
-                "https://github.com/${config.tenant.name}/*"
+                app.gitRepo.url for app in config.tenant.applications
+            ] + [
+                "https://github.com/${config.tenant.name}/*"  # Wildcard for team repos
             ]
             destinations = [
                 {
@@ -46,7 +48,7 @@ argocd_project = [] if not config.tenant?.applications else [
                     name = "project-admin"
                     description = "Project admin role"
                     policies = [
-                        "p, proj:${config.tenant.prefix}:project-admin, applications, *, ${config.tenant.prefix}/*, allow"
+                        "p, proj:${config.tenant.name}-${config.tenant.env}:project-admin, applications, *, ${config.tenant.name}-${config.tenant.env}/*, allow"
                     ]
                     groups = [
                         "${config.tenant.name}-admins"
@@ -56,7 +58,7 @@ argocd_project = [] if not config.tenant?.applications else [
                     name = "project-readonly"
                     description = "Project read-only role"
                     policies = [
-                        "p, proj:${config.tenant.prefix}:project-readonly, applications, get, ${config.tenant.prefix}/*, allow"
+                        "p, proj:${config.tenant.name}-${config.tenant.env}:project-readonly, applications, get, ${config.tenant.name}-${config.tenant.env}/*, allow"
                     ]
                     groups = [
                         "${config.tenant.name}-viewers"
