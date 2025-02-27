@@ -2,18 +2,18 @@
 apiVersion: argoproj.io/v1alpha1
 kind: ApplicationSet
 metadata:
-  name: prod-tenant-namespaces
+  name: tenant-manager-prod
   namespace: argocd
 spec:
   generators:
     - git:
-        repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
+        repoURL: https://github.com/jihed/amazon-eks-tenant-manager.git
         revision: HEAD
         files:
-        - path: "clusters/production/tenants/config/*/input.yaml"
+        - path: "clusters/production/tenants/*/input.yaml"
   template:
     metadata:
-      name: 'prod-{{path.basename}}-tenant'
+      name: '{{path.basename}}-tenant-prod'
       namespace: argocd
       annotations:
         debug.path: '{{path}}'
@@ -24,9 +24,9 @@ spec:
     spec:
       project: tenants-prod
       source:
-        repoURL: https://github.com/jihed/amazon-eks-multitenant-cluster.git
+        repoURL: https://github.com/jihed/amazon-eks-tenant-manager.git
         targetRevision: HEAD
-        path: 'clusters/production/tenants/config'
+        path: 'clusters/production/config'
         plugin:
           name: kcl-v1.0
           parameters:
