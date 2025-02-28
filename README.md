@@ -116,6 +116,14 @@ limitRange:
     memory: "2Gi"
 ```
 
+5. **deploy the argo applicationset for the associated environement**
+
+```bash
+
+kubectl create -f clusters/dev/project.yaml
+kubectl create -f clusters/dev/applicationset.yaml
+```
+
 ## Application Onboarding Sequence
 
 ```mermaid
@@ -166,50 +174,54 @@ kubectl -n argocd get pods -l app.kubernetes.io/name=argocd-repo-server
 ```
 
 ## Project Structure
-```
+```bash
 .
-├── bootstrap                    # Bootstrap configurations
-│   ├── kcl-argocd-plugin.yaml  # KCL plugin configuration for Argo CD
-│   └── patch-argocd-repo-server.yaml # Repo server patch configuration
-├── clusters                     # Multi-environment cluster configurations
-│   ├── prod                     # Production environment
-│   │   ├── applicationset.yaml # ApplicationSet configuration
-│   │   ├── config             # KCL configurations
-│   │   │   ├── base          # Base KCL schemas and configurations
-│   │   │   │   ├── argocd_schema.k
-│   │   │   │   ├── common.k
-│   │   │   │   ├── config.k
-│   │   │   │   └── schema.k
-│   │   │   ├── kcl.mod       # KCL module definition
-│   │   │   ├── kcl.mod.lock  # KCL module lock file
-│   │   │   ├── main.k        # Main KCL entry point
-│   │   │   └── resources     # Resource generators
-│   │   │       ├── applicationset.k
-│   │   │       ├── argocd_project.k
-│   │   │       ├── limits.k
-│   │   │       ├── namespace.k
-│   │   │       ├── network.k
-│   │   │       ├── quota.k
-│   │   │       └── rbac.k
-│   │   ├── project.yaml      # Argo CD project configuration
-│   │   └── tenants          # Tenant-specific configurations
+├── bootstrap                                      # Bootstrap configurations
+│   ├── kcl-argocd-plugin.yaml                     # KCL plugin configuration for ArgoCD
+│   └── patch-argocd-repo-server.yaml              # Repo server patch configuration
+├── clusters                                       # Multi-environment cluster configurations
+│   ├── dev
+│   │   ├── applicationset.yaml                    # ApplicationSet configuration
+│   │   ├── project.yaml                           # Project configuration
+│   │   └── tenants                                # Tenant-specific configurations
 │   │       ├── team-a
 │   │       │   └── input.yaml
 │   │       └── team-b
 │   │           └── input.yaml
-│   ├── dev            # dev environment
-│   └── staging              # Staging environment
+│   ├── production
+│   │   └── ...
+│   └── staging
+│       └── ...
+├── config                                         # KCL configurations
+│   ├── base
+│   │   ├── argocd_schema.k
+│   │   ├── common.k
+│   │   ├── config.k
+│   │   └── schema.k
+│   ├── kcl.mod
+│   ├── kcl.mod.lock
+│   ├── main.k
+│   └── resources
+│       ├── applicationset.k
+│       ├── argocd_project.k
+│       ├── limits.k
+│       ├── namespace.k
+│       ├── network.k
+│       ├── quota.k
+│       └── rbac.k
+├── docs
+│   └── multitenant.md
 └── README.md
 ```
 
 Key components:
 - **bootstrap/**: Contains initial setup configurations for Argo CD and KCL plugin
+- **config/**: KCL configurations and resource generators
 - **clusters/**: Multi-environment cluster configurations
-  - **dev/**, **staging/**, **production/**: Environment-specific configurations
-    - **config/**: KCL configurations and resource generators
-    - **tenants/**: Tenant-specific configurations
-    - **applicationset.yaml**: ApplicationSet definitions
-    - **project.yaml**: Argo CD project configurations
+- **dev/**, **staging/**, **production/**: Environment-specific configurations
+  - **tenants/**: Tenant-specific configurations
+  - **applicationset.yaml**: ApplicationSet definitions
+  - **project.yaml**: Argo CD project configurations
 
 Each environment follows the same structure, allowing for consistent yet customizable configurations across different stages of deployment.
 
