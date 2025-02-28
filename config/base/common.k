@@ -1,11 +1,11 @@
 COMMON_LABELS = {
     "managed-by": "kcl"
     "app.kubernetes.io/managed-by": "kcl"
-    "app.kubernetes.io/created-by": "tenant-operator"
+    "app.kubernetes.io/created-by": "kcl-plugin"
 }
 
 COMMON_ANNOTATIONS = {
-    "tenant-operator.kubernetes.io/version": "v1"
+    "kcl-plugin.kubernetes.io/version": "v1.0"
 }
 
 mergeLabels = lambda labels: {str:str} {

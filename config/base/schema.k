@@ -1,4 +1,3 @@
-
 schema ResourceQuota:
     cpu?: str = "4"
     memory?: str = "8Gi"
@@ -53,6 +52,8 @@ schema Tenant:
     env: str
     prefix: str
     namespaces: [str]
+    labels?: {str:str} = {}
+    annotations?: {str:str} = {}
     resourceQuota: ResourceQuota
     limitRange: LimitRange
     accessControl: AccessControl

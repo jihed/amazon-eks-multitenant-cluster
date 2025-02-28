@@ -23,6 +23,13 @@ tenant = s.Tenant {
     env = str(tenant_data.env)
     prefix = "${tenant_data.name}-${tenant_data.env}"
     namespaces = [str(ns) for ns in tenant_data.namespaces]
+    
+    # Add labels and annotations if they exist
+    if tenant_data.labels:
+        labels = {str(k): str(v) for k, v in tenant_data.labels}
+    if tenant_data.annotations:
+        annotations = {str(k): str(v) for k, v in tenant_data.annotations}
+    
     resourceQuota = s.ResourceQuota {
         cpu = tenant_data?.resourceQuota?.cpu
         memory = tenant_data?.resourceQuota?.memory

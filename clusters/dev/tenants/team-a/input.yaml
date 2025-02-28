@@ -1,8 +1,14 @@
 name: team-a
-env: staging
+env: prod
+prefix: ta
 namespaces:
   - apps
   - tools
+labels:
+  cost-center: "123456"
+  department: "engineering"
+annotations:
+  monitoring.example.com/enabled: "true"
 applications:
   - name: guestbook
     gitRepo:
