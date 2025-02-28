@@ -31,7 +31,7 @@ spec:
           name: kcl-v1.0
           parameters:
             - name: TENANT_FILE
-              string: "../../clusters/dev/tenants/{{path.basename}}/input.yaml"
+              string: "../clusters/dev/tenants/{{path.basename}}/input.yaml"
             - name: ENVIRONMENT
               string: "dev"
       destination:
